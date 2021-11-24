@@ -34,9 +34,11 @@ def get_new_categories(categories_df : pd.DataFrame,
 
     return df, new_categories
 
-def process_categories(categories_df : pd.DataFrame,
-                       annotations_df : pd.DataFrame,
-                       replacements : Dict) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def process_categories(
+    categories_df : pd.DataFrame,
+    annotations_df : pd.DataFrame,
+    replacements : Dict = TACO_REPLACEMENTS
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process the categories of a dataset
 

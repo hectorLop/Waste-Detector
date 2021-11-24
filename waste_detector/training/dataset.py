@@ -10,6 +10,14 @@ import torchvision
 from typing import Callable, List
 from utils import read_img
 from torch.utils.data import Dataset
+from waste_detector.training.utils import read_img
+
+class CustomNormalization(A.ImageOnlyTransform):
+    def _norm(self, img):
+        return img / 255.
+
+    def apply(self, img, **params):
+        return self._norm(img)
 
 def get_transforms(augment : bool = False) -> List[Callable]:
     """
@@ -23,16 +31,80 @@ def get_transforms(augment : bool = False) -> List[Callable]:
     """
     transforms = [
                   A.Resize(512, 512, interpolation=cv2.INTER_NEAREST),
-                  A.Normalize(
-                      mean=(0.485, 0.456, 0.406),
-                      std=(0.229, 0.224, 0.225)
-                  ),
+                  CustomNormalization(p=1),
     ]
 
     if augment:
         pass
 
     return transforms
+
+class WasteImageDatasetNoMask(Dataset):
+    def __init__(self, df, transforms, config):
+        self.df = df
+        self.transforms = transforms
+        self.config = config
+
+        cols = [col for col in df.columns if col != 'image_id']
+        self.temp_df = self.df.groupby(['image_id'])[cols].agg(lambda x: list(x)).reset_index()
+        
+        self.image_info = collections.defaultdict(dict)
+
+        for index, row in self.temp_df.iterrows():
+            self.image_info[index] = {
+                'image_id': np.unique(row['image_id'])[0],
+                'height': np.unique(row['height'])[0],
+                'width': np.unique(row['width'])[0],
+                'area': list(row['area']),
+                'iscrowd': list(row['iscrowd']),
+                'image_path': os.path.join(self.config.IMGS_PATH, row['filename'][0]),
+                'bboxes': list(row['bbox']),
+                'categories': list(row['category_id']),
+            }
+    
+    def __getitem__(self, idx):
+        info = self.image_info[idx]
+
+        # Read the image and rotate it if neccesary
+        img = read_img(info['image_path'])
+        n_objects = len(info['bboxes'])
+
+        if img.shape[0] != info['height']:
+            raise ValueError('The first dimmension of the image must be the height')
+
+        boxes = [np.abs(box) for box in info['bboxes']]
+        labels = info['categories']
+
+        if self.transforms:
+            augs = A.Compose(self.transforms,
+                             bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
+            transformed = augs(image=img,
+                               bboxes=boxes,
+                               class_labels=labels)
+
+            img = transformed['image']
+            boxes = transformed['bboxes']
+
+        # Put the channels first, the image is already rotated in format (height, width)
+        img = torch.from_numpy(img.transpose(2,0,1), dtype=torch.float32) # channels first
+
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        labels = torch.as_tensor(labels, dtype=torch.int64)
+
+        boxes = torchvision.ops.box_convert(boxes, 'xywh', 'xyxy')
+
+        target = {
+            'boxes': boxes,
+            'labels': labels,
+            'image_id': torch.Tensor(info['image_id']),
+            'area': torch.Tensor(info['area']),
+            'iscrowd': torch.Tensor(info['iscrowd']),
+        }
+
+        return img, target
+
+    def __len__(self):
+        return len(self.image_info)
 
 class WasteImageDataset(Dataset):
     """
