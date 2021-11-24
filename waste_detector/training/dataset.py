@@ -8,7 +8,6 @@ import albumentations as A
 import torchvision
 
 from typing import Callable, List
-from utils import read_img
 from torch.utils.data import Dataset
 from waste_detector.training.utils import read_img
 
