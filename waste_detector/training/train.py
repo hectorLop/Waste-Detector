@@ -162,7 +162,7 @@ def get_efficientnet_model(num_classes):
     )
 
     out_channels = 1280
-    model = get_custom_faster_rcnn(backbone, out_channels, num_classes)
+    model = get_custom_faster_rcnn(backbone, out_channels, num_classes, Config)
 
     return model
 
@@ -176,15 +176,20 @@ def train(annotations_path):
     images_df = pd.DataFrame(annotations['images'])
     annotations_df = pd.DataFrame(annotations['annotations'])
 
+    print('Aggregating the datasets')
     annotations_df = aggregate_datasets(annotations_df, images_df)
+    print('Processing the new categories')
     annotations_df, categories_df = process_categories(categories_df,
                                                        annotations_df)
 
+    print('Preparing the data')
     train_df, val_df, test_df = split_data(annotations_df)
     train_loader, val_loader = get_loaders(train_df, val_df)
+    print('Getting the model')
     model = get_efficientnet_model(7)
 
-    model, train_loss, val_loss = fit(model, train_loader, val_loader, Config)
+    print('TRAINING')
+    model, train_loss, val_loss = fit(model, train_loader, val_loader, Config, 'prueba.pth')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -85,7 +85,7 @@ class WasteImageDatasetNoMask(Dataset):
             boxes = transformed['bboxes']
 
         # Put the channels first, the image is already rotated in format (height, width)
-        img = torch.from_numpy(img.transpose(2,0,1), dtype=torch.float32) # channels first
+        img = torch.from_numpy(img.transpose(2,0,1)) # channels first
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         labels = torch.as_tensor(labels, dtype=torch.int64)
