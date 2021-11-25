@@ -1,5 +1,5 @@
 from typing import Dict, Tuple
-from categories_format.config import TACO_REPLACEMENTS
+from waste_detector.categories_format.config import TACO_REPLACEMENTS
 
 import pandas as pd
 
@@ -28,7 +28,7 @@ def get_new_categories(categories_df : pd.DataFrame,
     new_categories = {}
 
     # Assign the old categories to the new ones
-    for idx, cat in enumerate(pd.unique(df['new_cat'])):
+    for idx, cat in enumerate(pd.unique(df['new_cat']), 1):
         if cat not in new_categories:
             new_categories[cat] = idx
 
