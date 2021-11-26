@@ -105,6 +105,29 @@ class WasteImageDatasetNoMask(Dataset):
     def __len__(self):
         return len(self.image_info)
 
+class WasteImageDatasetNoMaskInference(Dataset):
+    def __init__(self, image_paths : List[str], transforms : List[object]):
+        self.image_paths = image_paths
+        self.transforms = transforms
+    
+    def __getitem__(self, idx : int):
+        # Read the image and rotate it if neccesary
+        img = read_img(self.image_paths[idx])
+        
+        if self.transforms:
+            augs = A.Compose(self.transforms)
+            transformed = augs(image=img)
+
+            img = transformed['image']
+
+        # Put the channels first, the image is already rotated in format (height, width)
+        img = torch.from_numpy(img.transpose(2,0,1)) # channels first
+
+        return img
+
+    def __len__(self):
+        return len(self.image_paths)
+
 class WasteImageDataset(Dataset):
     """
     This class defines a dataset for waste object localization
