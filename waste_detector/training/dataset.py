@@ -39,10 +39,11 @@ def get_transforms(augment : bool = False) -> List[Callable]:
     return transforms
 
 class WasteImageDatasetNoMask(Dataset):
-    def __init__(self, df, transforms, config):
+    def __init__(self, df, transforms, config, efficientdet : bool = False):
         self.df = df
         self.transforms = transforms
         self.config = config
+        self.efficientdet = efficientdet
 
         cols = [col for col in df.columns if col != 'image_id']
         self.temp_df = self.df.groupby(['image_id'])[cols].agg(lambda x: list(x)).reset_index()
@@ -92,6 +93,10 @@ class WasteImageDatasetNoMask(Dataset):
 
         boxes = torchvision.ops.box_convert(boxes, 'xywh', 'xyxy')
 
+        # Convert to yxyx format if efficientdet is used
+        if self.efficientdet:
+            boxes[:, [0, 1, 2, 3]] = boxes[:, [1, 0, 3, 2]]
+
         target = {
             'boxes': boxes,
             'labels': labels,
@@ -99,6 +104,14 @@ class WasteImageDatasetNoMask(Dataset):
             'area': torch.Tensor(info['area']),
             'iscrowd': torch.Tensor(info['iscrowd']),
         }
+
+        # Convert to yxyx format if efficientdet is used
+        if self.efficientdet:
+            target['boxes'][:, [0, 1, 2, 3]] = target['boxes'][:, [1, 0, 3, 2]]
+            target['img_size'] = (img.shape[1], img.shape[2])
+            target['img_scale'] = torch.tensor([1.0])
+            del target['area']
+            del target['iscrowd']
 
         return img, target
 

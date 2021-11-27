@@ -16,7 +16,7 @@ from waste_detector.training.dataset import (
 from waste_detector.training.config import Config
 from waste_detector.training.utils import fix_all_seeds
 from waste_detector.training.data_split import split_data
-from waste_detector.training.models import get_custom_faster_rcnn
+from waste_detector.training.models import get_custom_faster_rcnn, create_efficientdet_model
 from waste_detector.categories_format.format import process_categories
 from torch.utils.data import DataLoader
 
@@ -251,9 +251,10 @@ def train(annotations_path):
     train_loader, val_loader = get_loaders(train_df, val_df)
     print('Getting the model')
     #model = get_efficientnet_model(7)
-    model = get_faster_rcnn(7)
+    #model = get_faster_rcnn(7)
+    model = create_efficientdet_model(7, 512, 'efficientdet_d0')
     print('TRAINING')
-    model, train_loss, val_loss = fit(model, train_loader, val_loader, Config, 'faster_rcnn.pth')
+    model, train_loss, val_loss = fit(model, train_loader, val_loader, Config, 'efficientdet.pth')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
