@@ -1,0 +1,5 @@
+parameters:
+  - training_set: l
+  - validation_set: l
+  - model: efficientdet
+  - checkpoint: l

@@ -1,3 +1,4 @@
+from typing import Dict
 import torch
 import numpy as np
 import json
@@ -6,6 +7,7 @@ import timm
 import argparse
 import gc
 import torchvision
+import yaml
 
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchmetrics import MAP
@@ -13,11 +15,9 @@ from waste_detector.training.dataset import (
     WasteImageDatasetNoMask,
     get_transforms
 )
-from waste_detector.training.config import Config
+from waste_detector.training.config import Config, MODELS_FUNCTIONS
 from waste_detector.training.utils import fix_all_seeds
-from waste_detector.training.data_split import split_data
 from waste_detector.training.models import get_custom_faster_rcnn, create_efficientdet_model
-from waste_detector.categories_format.format import process_categories
 from torch.utils.data import DataLoader
 
 def train_step(model, train_loader, config, scheduler, optimizer, n_batches):
@@ -168,97 +168,34 @@ def get_loaders(df_train, df_val, config=Config):
 
     return dl_train, dl_val
 
-def aggregate_datasets(annotations_df, images_df):
-    data = []
-
-    for id in annotations_df['image_id']:
-        image_data = images_df[images_df['id'] == id]
-        
-        file_name = image_data['file_name'].values[0]
-        width= image_data['width'].values[0]
-        height = image_data['height'].values[0]
-
-        data.append((file_name, width, height))
-
-    df = pd.DataFrame(data, columns=['filename', 'width', 'height'])
-    annotations_df = pd.concat([annotations_df, df], axis=1)
-
-    return annotations_df
-
-def get_efficientnet_model(num_classes):
-    efficientnet = timm.create_model('efficientnet_b0', pretrained=True)
-
-    backbone = torch.nn.Sequential(
-        efficientnet.conv_stem,
-        efficientnet.bn1,
-        efficientnet.act1,
-        efficientnet.blocks,
-        efficientnet.conv_head,
-        efficientnet.bn2,
-        efficientnet.act2
-    )
-
-    out_channels = 1280
-    model = get_custom_faster_rcnn(backbone, out_channels, num_classes+1, Config)
-
-    return model
-
-def get_faster_rcnn(num_classes, config=Config):
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-    
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes+1)
-
-    return model
-
-def get_efficientnetv2_model(num_classes):
-    efficientnet = timm.create_model('efficientnetv2_rw_s', pretrained=True)
-
-    backbone = torch.nn.Sequential(
-        efficientnet.conv_stem,
-        efficientnet.bn1,
-        efficientnet.act1,
-        efficientnet.blocks,
-        efficientnet.conv_head,
-        efficientnet.bn2,
-        efficientnet.act2
-    )
-
-    out_channels = 1792
-    model = get_custom_faster_rcnn(backbone, out_channels, num_classes+1, Config)
-
-    return model
-
-def train(annotations_path):
+def train(parameters : Dict):
     fix_all_seeds(4444)
 
-    with open(annotations_path, 'r') as file:
-        annotations = json.load(file)
+    train_df = pd.read_csv(parameters['train_set'])
+    val_df = pd.read_csv(parameters['val_set'])
 
-    categories_df = pd.DataFrame(annotations['categories'])
-    images_df = pd.DataFrame(annotations['images'])
-    annotations_df = pd.DataFrame(annotations['annotations'])
-
-    print('Aggregating the datasets')
-    annotations_df = aggregate_datasets(annotations_df, images_df)
-    print('Processing the new categories')
-    annotations_df, categories_df = process_categories(categories_df,
-                                                       annotations_df)
-
-    print('Preparing the data')
-    train_df, val_df, test_df = split_data(annotations_df)
-    train_loader, val_loader = get_loaders(train_df, val_df)
+    functions = MODELS_FUNCTIONS[parameters['architecture']]
+    train_loader, val_loader = get_loaders(train_df,
+                                           val_df,
+                                           functions['collate_fn'])
     print('Getting the model')
+    model = functions['model_fn'](7, **functions['model_fn']['params'])
     #model = get_efficientnet_model(7)
     #model = get_faster_rcnn(7)
-    model = create_efficientdet_model(7, 512, 'efficientdet_d0')
+    #model = create_efficientdet_model(7, 512, 'efficientdet_d0')
     print('TRAINING')
-    model, train_loss, val_loss = fit(model, train_loader, val_loader, Config, 'efficientdet.pth')
+    model, train_loss, val_loss = fit(model,
+                                      train_loader,
+                                      val_loader,
+                                      Config,
+                                      parameters['checkpoint_path'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--file', required=True, help='annotations JSON')
+    parser.add_argument('-c', '--config', required=True, help='Config YAML file')
     args = parser.parse_args()
 
-    train(args.file)
+    with open(args.config) as file:
+        params = yaml.load(file, Loader=yaml.FullLoader)
+
+    train(params['parameters'])

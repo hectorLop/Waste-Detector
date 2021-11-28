@@ -1,37 +1,15 @@
 import torchvision
+import timm
+import torch
 
 from torchvision.models.detection import FasterRCNN
 from torchvision.models.detection.rpn import AnchorGenerator
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
-from effdet.config.model_config import efficientdet_model_param_dict
 from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 from effdet.efficientdet import HeadNet
 from effdet.config.model_config import efficientdet_model_param_dict
 
-def get_mask_rcnn_resnet(config, num_classes=7, model_chkpt=None):
-    model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True,
-                                                               box_detections_per_img=60,
-                                                               image_mean=(0.485, 0.456, 0.406),
-                                                               image_std=(0.229, 0.224, 0.225))
-        
-    # Number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    # Replace the pre-trained head with a new one to match out number of classes
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes+1)
-    
-    # Get the number of input features for the mask classifier
-    in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-    hidden_layer = 256
-    # Replace the mask predictor with a new one to match our number of classes
-    model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                      hidden_layer,
-                                                      num_classes+1)
-        
-    return model
-
-def get_custom_faster_rcnn(backbone, out_features, num_classes, config):
+def create_custom_faster_rcnn(backbone, out_features, num_classes):
     #backbone = backbone_model.features
     backbone.out_channels = out_features
 
@@ -49,7 +27,24 @@ def get_custom_faster_rcnn(backbone, out_features, num_classes, config):
     
     return model
 
-def create_efficientdet_model(num_classes : int, image_size :int,
+def get_efficientnetv2_backbone():
+    efficientnet = timm.create_model('efficientnetv2_rw_s', pretrained=True)
+
+    backbone = torch.nn.Sequential(
+        efficientnet.conv_stem,
+        efficientnet.bn1,
+        efficientnet.act1,
+        efficientnet.blocks,
+        efficientnet.conv_head,
+        efficientnet.bn2,
+        efficientnet.act2
+    )
+
+    backbone.out_channels = efficientnet.conv_head.out_features
+
+    return backbone
+
+def create_efficientdet_model(num_classes : int, image_size : int,
                               architecture : str) -> object:
     config = get_efficientdet_config(architecture)
     config.update({'num_classes': num_classes})

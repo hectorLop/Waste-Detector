@@ -26,7 +26,7 @@ def get_transforms(augment : bool = False) -> List[Callable]:
         augment (bool): Flag to add data augmentation
 
     Returns:
-        list: list containing the tranformations
+        List[Callable]: list containing the tranformations
     """
     transforms = [
                   A.Resize(512, 512, interpolation=cv2.INTER_NEAREST),
@@ -37,6 +37,36 @@ def get_transforms(augment : bool = False) -> List[Callable]:
         pass
 
     return transforms
+
+def efficientdet_collate_fn(batch):
+    images, targets = tuple(zip(*batch))
+    images = torch.stack(images)
+    images = images.float()
+
+    boxes = [target["bboxes"].float() for target in targets]
+    # Convert from xyxy to yxyx 
+    boxes = [box[:, [1, 0, 3, 2]] for box in boxes]
+    # Size for each image, the returned size is already a tensor
+    img_size = [image.size[2:4] for image in images]
+    img_scale = [torch.as_tensor(1.0) for i in range(len(images))]
+
+    labels = [target["labels"].float() for target in targets]
+
+    annotations = {
+        "bbox": boxes,
+        "cls": labels,
+        "img_size": img_size,
+        "img_scale": img_scale,
+    }
+
+    return images, annotations
+
+def faster_rcnn_collate_fn(batch):
+    images, targets = tuple(zip(*batch))
+    images = torch.stack(images)
+    images = images.float()
+
+    return images, list(targets)
 
 class WasteImageDatasetNoMask(Dataset):
     def __init__(self, df, transforms, config, efficientdet : bool = False):
@@ -94,14 +124,15 @@ class WasteImageDatasetNoMask(Dataset):
         boxes = torchvision.ops.box_convert(boxes, 'xywh', 'xyxy')
 
         # Convert to yxyx format if efficientdet is used
-        if self.efficientdet:
-            boxes[:, [0, 1, 2, 3]] = boxes[:, [1, 0, 3, 2]]
+        # if self.efficientdet:
+        #     boxes[:, [0, 1, 2, 3]] = boxes[:, [1, 0, 3, 2]]
 
         target = {
             'boxes': boxes,
             'labels': labels,
             'image_id': torch.Tensor(info['image_id']),
             'area': torch.Tensor(info['area']),
+            'img_size': (info['height'], info['width']),
             'iscrowd': torch.Tensor(info['iscrowd']),
         }
 
