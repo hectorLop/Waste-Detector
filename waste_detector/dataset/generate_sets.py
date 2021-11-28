@@ -3,6 +3,7 @@ from typing import Dict
 import pandas as pd
 import argparse
 import yaml
+import pickle
 
 from waste_detector.dataset.format import process_categories
 from waste_detector.dataset.data_split import split_data
@@ -24,6 +25,10 @@ def aggregate_datasets(annotations_df, images_df):
 
     return annotations_df
 
+def save_to_pickle(data, path):
+    with open(path, 'wb') as file:
+        pickle.dump(data, file)
+
 def generate_sets(config : Dict):
     with open(config['annotations'], 'r') as file:
         annotations = json.load(file)
@@ -40,10 +45,15 @@ def generate_sets(config : Dict):
 
     print('Preparing the data')
     train_df, val_df, test_df = split_data(annotations_df)
-
-    train_df.to_csv(config['train_path'], index=False)
-    val_df.to_csv(config['val_path'], index=False)
-    test_df.to_csv(config['test_path'], index=False)
+    
+    with open(config['train_path'], 'wb') as file:
+        pickle.dump(train_df, file)
+        
+    with open(config['val_path'], 'wb') as file:
+        pickle.dump(val_df, file)
+        
+    with open(config['test_path'], 'wb') as file:
+        pickle.dump(test_df, file)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

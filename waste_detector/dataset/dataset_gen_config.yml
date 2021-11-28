@@ -1,4 +1,4 @@
 annotations: /home/data/annotations.json
-train_path: /home/data/train.csv
-val_path: /home/data/val.csv
-test_path: /home/data/test.csv
+train_path: /home/data/train.pkl
+val_path: /home/data/val.pkl
+test_path: /home/data/test.pkl
