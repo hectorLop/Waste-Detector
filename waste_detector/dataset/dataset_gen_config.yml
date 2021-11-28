@@ -1,0 +1,5 @@
+parameters:
+  - annotations: f
+  - train_path: f
+  - val_path: f
+  - test_path: f
