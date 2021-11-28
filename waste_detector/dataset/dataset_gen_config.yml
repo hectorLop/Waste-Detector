@@ -1,5 +1,4 @@
-parameters:
-  - annotations: f
-  - train_path: f
-  - val_path: f
-  - test_path: f
+annotations: /home/data/annotations.json
+train_path: /home/data/train.csv
+val_path: /home/data/val.csv
+test_path: /home/data/test.csv

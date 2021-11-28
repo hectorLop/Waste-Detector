@@ -53,6 +53,6 @@ if __name__ == '__main__':
     with open(args.config) as file:
         params = yaml.load(file, Loader=yaml.FullLoader)
 
-    generate_sets(params['parameters'])
+    generate_sets(params)
 
 

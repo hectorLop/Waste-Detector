@@ -1,5 +1,5 @@
 from typing import Dict, Tuple
-from waste_detector.categories_format.config import TACO_REPLACEMENTS
+from waste_detector.dataset.config import TACO_REPLACEMENTS
 
 import pandas as pd
 
