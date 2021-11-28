@@ -43,12 +43,12 @@ def efficientdet_collate_fn(batch):
     images = torch.stack(images)
     images = images.float()
 
-    boxes = [target["bboxes"].float() for target in targets]
+    boxes = [target["boxes"].float() for target in targets]
     # Convert from xyxy to yxyx 
     boxes = [box[:, [1, 0, 3, 2]] for box in boxes]
     # Size for each image, the returned size is already a tensor
-    img_size = [image.size[2:4] for image in images]
-    img_scale = [torch.as_tensor(1.0) for i in range(len(images))]
+    img_size = [torch.as_tensor(image.shape[1:3]) for image in images]
+    img_scale = [torch.as_tensor(1.0, dtype=torch.float32) for i in range(len(images))]
 
     labels = [target["labels"].float() for target in targets]
 
@@ -69,11 +69,10 @@ def faster_rcnn_collate_fn(batch):
     return images, list(targets)
 
 class WasteImageDatasetNoMask(Dataset):
-    def __init__(self, df, transforms, config, efficientdet : bool = False):
+    def __init__(self, df, transforms, config):
         self.df = df
         self.transforms = transforms
         self.config = config
-        self.efficientdet = efficientdet
 
         cols = [col for col in df.columns if col != 'image_id']
         self.temp_df = self.df.groupby(['image_id'])[cols].agg(lambda x: list(x)).reset_index()
@@ -101,10 +100,11 @@ class WasteImageDatasetNoMask(Dataset):
 
         if img.shape[0] != info['height']:
             raise ValueError('The first dimmension of the image must be the height')
-
+        
         boxes = [np.abs(box) for box in info['bboxes']]
+        
         labels = info['categories']
-
+        
         if self.transforms:
             augs = A.Compose(self.transforms,
                              bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
@@ -114,7 +114,7 @@ class WasteImageDatasetNoMask(Dataset):
 
             img = transformed['image']
             boxes = transformed['bboxes']
-
+        
         # Put the channels first, the image is already rotated in format (height, width)
         img = torch.from_numpy(img.transpose(2,0,1)) # channels first
 
@@ -122,10 +122,6 @@ class WasteImageDatasetNoMask(Dataset):
         labels = torch.as_tensor(labels, dtype=torch.int64)
 
         boxes = torchvision.ops.box_convert(boxes, 'xywh', 'xyxy')
-
-        # Convert to yxyx format if efficientdet is used
-        # if self.efficientdet:
-        #     boxes[:, [0, 1, 2, 3]] = boxes[:, [1, 0, 3, 2]]
 
         target = {
             'boxes': boxes,
@@ -137,12 +133,12 @@ class WasteImageDatasetNoMask(Dataset):
         }
 
         # Convert to yxyx format if efficientdet is used
-        if self.efficientdet:
-            target['boxes'][:, [0, 1, 2, 3]] = target['boxes'][:, [1, 0, 3, 2]]
-            target['img_size'] = (img.shape[1], img.shape[2])
-            target['img_scale'] = torch.tensor([1.0])
-            del target['area']
-            del target['iscrowd']
+        #if self.efficientdet:
+         #   target['boxes'][:, [0, 1, 2, 3]] = target['boxes'][:, [1, 0, 3, 2]]
+          #  target['img_size'] = (img.shape[1], img.shape[2])
+           # target['img_scale'] = torch.tensor([1.0])
+            #del target['area']
+            #del target['iscrowd']
 
         return img, target
 

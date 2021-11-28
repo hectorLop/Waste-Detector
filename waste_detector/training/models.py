@@ -9,9 +9,9 @@ from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 from effdet.efficientdet import HeadNet
 from effdet.config.model_config import efficientdet_model_param_dict
 
-def create_custom_faster_rcnn(backbone, out_features, num_classes):
-    #backbone = backbone_model.features
-    backbone.out_channels = out_features
+def create_custom_faster_rcnn(num_classes, backbone_fn):
+    backbone = backbone_fn()
+    #backbone.out_channels = out_features
 
     anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),
                                        aspect_ratios=((0.5, 1.0, 2.0),))
@@ -39,8 +39,8 @@ def get_efficientnetv2_backbone():
         efficientnet.bn2,
         efficientnet.act2
     )
-
-    backbone.out_channels = efficientnet.conv_head.out_features
+    
+    backbone.out_channels = efficientnet.conv_head.out_channels
 
     return backbone
 

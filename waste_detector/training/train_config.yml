@@ -1,5 +1,4 @@
-parameters:
-  - training_set: l
-  - validation_set: l
-  - model: efficientdet
-  - checkpoint: l
+train_set: /home/data/train.pkl
+val_set: /home/data/val.pkl
+model: efficientdet
+checkpoint: /home/checkpoints/efficientDet.pth

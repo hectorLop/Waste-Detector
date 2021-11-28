@@ -11,7 +11,7 @@ from waste_detector.training.dataset import (
 )
 
 class Config:
-    IMGS_PATH = '/content/drive/MyDrive/Proyectos/Waste-Detector/taco-dataset/'
+    IMGS_PATH = '/home/data/'
     
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
     
@@ -33,7 +33,7 @@ MODELS_FUNCTIONS = {
         'collate_fn': faster_rcnn_collate_fn,
         'model_fn': create_custom_faster_rcnn,
         'params': {
-            'backbone': get_efficientnetv2_backbone()
+            'backbone': get_efficientnetv2_backbone
         }
     }
 }

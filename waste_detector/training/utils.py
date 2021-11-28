@@ -37,3 +37,15 @@ def read_img(filepath : str):
                 I = I.rotate(90,expand=True)
 
     return np.array(I)
+
+def annotations_to_device(annotations, device):
+    if isinstance(annotations, list):
+        new_annot = [{k: v.to(device) for k, v in t.items()} for t in annotations]
+    elif isinstance(annotations, dict):
+        new_annot = {}
+        
+        for k, v in annotations.items():
+            values = [val.to(device) for val in v]
+            new_annot[k] = values
+            
+    return new_annot
