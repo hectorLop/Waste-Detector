@@ -5,7 +5,7 @@ import torch
 from torchvision.models.detection import FasterRCNN
 from torchvision.models.detection.rpn import AnchorGenerator
 
-from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
+from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain, DetBenchPredict
 from effdet.efficientdet import HeadNet
 from effdet.config.model_config import efficientdet_model_param_dict
 
@@ -57,3 +57,20 @@ def create_efficientdet_model(num_classes : int, image_size : int,
     )
 
     return DetBenchTrain(net, config)
+
+def create_efficientdet_inference(num_classes : int, checkpoint : str,
+                                  image_size : int, architecture : str):
+    config = get_efficientdet_config(architecture)
+    config.update({'num_classes': num_classes})
+    config.update({'image_size': (image_size, image_size)})
+
+    net = EfficientDet(config, pretrained_backbone=True)
+    net.class_net = HeadNet(
+        config,
+        num_outputs=num_classes
+    )
+    
+    model = DetBenchPredict(net)
+    model.load_state_dict(torch.load(checkpoint))
+
+    return model

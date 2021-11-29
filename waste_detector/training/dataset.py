@@ -10,7 +10,6 @@ import torchvision
 from typing import Callable, List
 from torch.utils.data import Dataset
 from waste_detector.training.utils import read_img
-from waste_detector.training.config import Config
 
 class CustomNormalization(A.ImageOnlyTransform):
     def _norm(self, img):
@@ -19,7 +18,7 @@ class CustomNormalization(A.ImageOnlyTransform):
     def apply(self, img, **params):
         return self._norm(img)
 
-def get_transforms(config : Config = Config, augment : bool = False) -> List[Callable]:
+def get_transforms(config, augment : bool = False) -> List[Callable]:
     """
     Get the transforms to apply yo the data.
 
@@ -57,6 +56,22 @@ def efficientdet_collate_fn(batch):
     annotations = {
         "bbox": boxes,
         "cls": labels,
+        "img_size": img_size,
+        "img_scale": img_scale,
+    }
+
+    return images, annotations
+
+def efficientdet_inference_collate_fn(batch):
+    images = batch
+    images = torch.stack(images)
+    images = images.float()
+
+    # Size for each image, the returned size is already a tensor
+    img_size = [torch.as_tensor(image.shape[1:3]) for image in images]
+    img_scale = [torch.as_tensor(1.0, dtype=torch.float32) for i in range(len(images))]
+
+    annotations = {
         "img_size": img_size,
         "img_scale": img_scale,
     }
@@ -134,14 +149,6 @@ class WasteImageDatasetNoMask(Dataset):
             'iscrowd': torch.Tensor(info['iscrowd']),
         }
 
-        # Convert to yxyx format if efficientdet is used
-        #if self.efficientdet:
-         #   target['boxes'][:, [0, 1, 2, 3]] = target['boxes'][:, [1, 0, 3, 2]]
-          #  target['img_size'] = (img.shape[1], img.shape[2])
-           # target['img_scale'] = torch.tensor([1.0])
-            #del target['area']
-            #del target['iscrowd']
-
         return img, target
 
     def __len__(self):
@@ -166,7 +173,7 @@ class WasteImageDatasetNoMaskInference(Dataset):
         img = torch.from_numpy(img.transpose(2,0,1)) # channels first
 
         return img
-
+    
     def __len__(self):
         return len(self.image_paths)
 
