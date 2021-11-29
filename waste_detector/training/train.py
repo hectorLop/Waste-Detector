@@ -173,14 +173,14 @@ def fit(model, train_loader, val_loader, config, filepath):
     return model, train_loss_accum, val_loss_accum
 
 def get_loaders(df_train, df_val, collate_fn, config=Config):
-    ds_train = WasteImageDatasetNoMask(df_train, get_transforms(augment=True), config)
+    ds_train = WasteImageDatasetNoMask(df_train, get_transforms(config, augment=True), config)
     dl_train = DataLoader(ds_train,
                           batch_size=config.BATCH_SIZE,
                           shuffle=True,
                           num_workers=4,
                           collate_fn=collate_fn)
 
-    ds_val = WasteImageDatasetNoMask(df_val, get_transforms(augment=False), config)
+    ds_val = WasteImageDatasetNoMask(df_val, get_transforms(config, augment=False), config)
     dl_val = DataLoader(ds_val,
                         batch_size=config.BATCH_SIZE,
                         shuffle=True,
