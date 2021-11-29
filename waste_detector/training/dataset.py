@@ -10,6 +10,7 @@ import torchvision
 from typing import Callable, List
 from torch.utils.data import Dataset
 from waste_detector.training.utils import read_img
+from waste_detector.training.config import Config
 
 class CustomNormalization(A.ImageOnlyTransform):
     def _norm(self, img):
@@ -18,7 +19,7 @@ class CustomNormalization(A.ImageOnlyTransform):
     def apply(self, img, **params):
         return self._norm(img)
 
-def get_transforms(augment : bool = False) -> List[Callable]:
+def get_transforms(config : Config = Config, augment : bool = False) -> List[Callable]:
     """
     Get the transforms to apply yo the data.
 
@@ -29,7 +30,8 @@ def get_transforms(augment : bool = False) -> List[Callable]:
         List[Callable]: list containing the tranformations
     """
     transforms = [
-                  A.Resize(512, 512, interpolation=cv2.INTER_NEAREST),
+                  A.Resize(config.IMG_SIZE, config.IMG_SIZE,
+                           interpolation=cv2.INTER_NEAREST),
                   CustomNormalization(p=1),
     ]
 

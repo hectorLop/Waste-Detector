@@ -9,6 +9,7 @@ import gc
 import torchvision
 import yaml
 import pickle
+import wandb
 
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchmetrics import MAP
@@ -103,7 +104,7 @@ def fit(model, train_loader, val_loader, config, filepath):
 
     optimizer = torch.optim.SGD(model.parameters(),
                                 lr=config.LEARNING_RATE,
-                                momentum=0.9,
+                                momentum=config.MOMENTUM,
                                 weight_decay=config.WEIGHT_DECAY)
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
@@ -111,6 +112,15 @@ def fit(model, train_loader, val_loader, config, filepath):
                                                    gamma=0.1)
     
     n_batches, n_batches_val = len(train_loader), len(val_loader)
+
+    wandb.config = {
+        'learning_rate': config.LEARNING_RATE,
+        'weight_decay': config.WEIGHT_DECAY,
+        'momentum': config.MOMENTUM,
+        'batch_size': config.BATCH_SIZE,
+        'total_epochs': config.EPOCHS,
+        'img_size': config.IMG_SIZE
+    }
 
     model.train()
 
@@ -139,6 +149,12 @@ def fit(model, train_loader, val_loader, config, filepath):
             
             val_loss = loss / n_batches_val
             val_loss_accum.append(train_loss)
+
+            wandb.log({
+                'epoch': epoch,
+                'train_loss': train_loss,
+                'val_loss': val_loss
+            })
             
             gc.collect()
 
@@ -196,6 +212,7 @@ def train(parameters : Dict):
     #model = get_efficientnet_model(7)
     #model = get_faster_rcnn(7)
     #model = create_efficientdet_model(7, 512, 'efficientdet_d0')
+    wandb.init(project='waste_detector', entity='hlopez')
     print('TRAINING')
     model, train_loss, val_loss = fit(model,
                                       train_loader,

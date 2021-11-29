@@ -15,10 +15,12 @@ class Config:
     
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    BATCH_SIZE=8
+    IMG_SIZE = 256
+    BATCH_SIZE = 8
     EPOCHS = 30
     LEARNING_RATE = 0.005
     WEIGHT_DECAY = 0.0005
+    MOMENTUM = 0.9
 
 MODELS_FUNCTIONS = {
     'efficientdet': {
