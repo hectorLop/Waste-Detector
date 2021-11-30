@@ -125,7 +125,11 @@ def fit(model, train_loader, val_loader, config, filepath):
             wandb.log({
                 'epoch': epoch,
                 'train_loss': train_loss,
-                'val_loss': val_loss
+                'train_box_loss': train_box_loss,
+                'train_class_loss': train_class_loss,
+                'val_loss': val_loss,
+                'val_box_loss': val_box_loss,
+                'val_class_loss': val_class_loss
             })
             
             gc.collect()
