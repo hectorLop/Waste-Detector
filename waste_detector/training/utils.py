@@ -49,3 +49,7 @@ def annotations_to_device(annotations, device):
             new_annot[k] = values
             
     return new_annot
+
+def get_box_class_and_total_loss(loss_dict):
+    if len(loss_dict) == 3:
+        return loss_dict['loss'], loss_dict['class_loss'], loss_dict['box_loss']

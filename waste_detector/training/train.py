@@ -18,83 +18,62 @@ from waste_detector.training.dataset import (
     get_transforms
 )
 from waste_detector.training.config import Config, MODELS_FUNCTIONS
-from waste_detector.training.utils import fix_all_seeds, annotations_to_device
-#from waste_detector.training.models import get_custom_faster_rcnn, create_efficientdet_model
+from waste_detector.training.utils import (
+    fix_all_seeds,
+    annotations_to_device,
+    get_box_class_and_total_loss,
+)
 from torch.utils.data import DataLoader
 
 def train_step(model, train_loader, config, scheduler, optimizer, n_batches):
-    loss_accum = 0.0
-    
-    preds, ground_truths = [], []
-    
+    total_loss_accum, class_loss_accum, box_loss_accum = 0.0, 0.0, 0.0
+        
     for batch_idx, (images, targets) in enumerate(train_loader, 1):
         # Predict
-        images = images.to(config.DEVICE)
-        ground_truths += targets
-        
+        images = images.to(config.DEVICE)        
         targets = annotations_to_device(targets, config.DEVICE)
-        #targets = [{k: v.to(config.DEVICE) for k, v in t.items()} for t in targets]
         
         model.train()
         loss_dict = model(images, targets)
-        loss = loss_dict['loss']
-        #loss = sum(loss for loss in loss_dict.values())
+        #print(loss_dict.keys())
+        #loss = loss_dict['loss']
+        total_loss, class_loss, box_loss = get_box_class_and_total_loss(loss_dict)
     
         # Backprop
         optimizer.zero_grad()
-        loss.backward()
+        total_loss.backward()
         optimizer.step()
 
-        loss_accum += loss.item()
-        #model.eval()
-        #temp_preds = model(images)
-        #temp_preds = [{k: v.detach().cpu() for k, v in t.items()} for t in temp_preds]
-        #preds += temp_preds
+        total_loss_accum += total_loss.item()
+        class_loss_accum += class_loss.item()
+        box_loss_accum += box_loss.item()
         
         gc.collect()
-
-    #map_metric = MAP()
-    #map_metric.update(preds, ground_truths)
-    #result = map_metric.compute()
-    #map_value = result['map'].item()
         
     scheduler.step()
 
-    return model, loss_accum
+    return model, total_loss_accum, class_loss_accum, box_loss_accum
 
 def val_step(model, val_loader, config, n_batches_val):
     # If the model is set up to eval, it does not return losses
-
-    val_loss_accum = 0
-    preds, ground_truths = [], []
+    total_loss_accum, class_loss_accum, box_loss_accum = 0.0, 0.0, 0.0
+    
     with torch.no_grad():
         for batch_idx, (images, targets) in enumerate(val_loader, 1):
-            #images = list(image.to(config.DEVICE).float() for image in images)
             images = images.to(config.DEVICE)
-            ground_truths += targets
-            #targets = [{k: v.to(config.DEVICE) for k, v in t.items()} for t in targets]
             targets = annotations_to_device(targets, config.DEVICE)
             
             model.train()
             val_loss_dict = model(images, targets)
-            val_batch_loss = val_loss_dict['loss']
-            #val_batch_loss = sum(loss for loss in val_loss_dict.values())
+            total_loss, class_loss, box_loss = get_box_class_and_total_loss(val_loss_dict)
 
-            val_loss_accum += val_batch_loss.item()
+            total_loss_accum += total_loss.item()
+            class_loss_accum += class_loss.item()
+            box_loss_accum += box_loss.item()
             
             gc.collect()
-            
-            #model.eval()
-            #temp_preds = model(images)
-            #temp_preds = [{k: v.detach().cpu() for k, v in t.items()} for t in temp_preds]
-            #preds += temp_preds
-    
-    #map_metric = MAP()
-    #map_metric.update(preds, ground_truths)
-    #result = map_metric.compute()
-    #map_value = result['map'].item()
 
-    return model, val_loss_accum
+    return model, total_loss_accum, class_loss_accum, box_loss_accum
 
 def fit(model, train_loader, val_loader, config, filepath):
 #     for param in model.parameters():
@@ -106,48 +85,41 @@ def fit(model, train_loader, val_loader, config, filepath):
                                 lr=config.LEARNING_RATE,
                                 momentum=config.MOMENTUM,
                                 weight_decay=config.WEIGHT_DECAY)
-
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                    step_size=5,
                                                    gamma=0.1)
     
     n_batches, n_batches_val = len(train_loader), len(val_loader)
 
-    wandb.config = {
-        'learning_rate': config.LEARNING_RATE,
-        'weight_decay': config.WEIGHT_DECAY,
-        'momentum': config.MOMENTUM,
-        'batch_size': config.BATCH_SIZE,
-        'total_epochs': config.EPOCHS,
-        'img_size': config.IMG_SIZE
-    }
-
     model.train()
 
     best_loss = np.inf
-
     val_loss_accum, train_loss_accum = [], []
 
     with torch.cuda.device(config.DEVICE):
         for epoch in range(1, config.EPOCHS + 1):
-            model, loss = train_step(model,
-                                     train_loader,
-                                     config,
-                                     lr_scheduler,
-                                     optimizer,
-                                     n_batches)
+            model, train_loss, train_class_loss, train_box_loss = train_step(model,
+                                                                             train_loader,
+                                                                             config,
+                                                                             lr_scheduler,
+                                                                             optimizer,
+                                                                             n_batches)
             
-            train_loss = loss / n_batches
+            train_loss = train_loss / n_batches
+            train_class_loss = train_class_loss / n_batches
+            train_box_loss = train_box_loss / n_batches
             train_loss_accum.append(train_loss)
             
             gc.collect()
 
-            model, loss = val_step(model,
-                                   val_loader,
-                                   config,
-                                   n_batches_val)
+            model, val_loss, val_class_loss, val_box_loss = val_step(model,
+                                                                       val_loader,
+                                                                       config,
+                                                                       n_batches_val)
             
-            val_loss = loss / n_batches_val
+            val_loss = val_loss / n_batches_val
+            val_class_loss = val_class_loss / n_batches
+            val_box_loss = val_box_loss / n_batches
             val_loss_accum.append(train_loss)
 
             wandb.log({
@@ -160,8 +132,9 @@ def fit(model, train_loader, val_loader, config, filepath):
 
             prefix = f"[Epoch {epoch:2d} / {config.EPOCHS:2d}]"
             print(prefix)
+            print(f"{prefix} Train class loss: {train_class_loss:7.3f}. Val class loss: {val_class_loss:7.3f}")
+            print(f"{prefix} Train box loss: {train_box_loss:7.3f}. Val box loss: {val_box_loss:7.3f}")
             print(f"{prefix} Train loss: {train_loss:7.3f}. Val loss: {val_loss:7.3f}")
-            #print(f"{prefix} Train mAP: {train_map:7.3f}. Val mAP: {val_map:7.3f}")
 
             if val_loss < best_loss:
                 best_loss = val_loss
@@ -197,9 +170,6 @@ def train(parameters : Dict):
         
     with open(parameters['val_set'], 'rb') as file:
         val_df = pickle.load(file)
-        
-    #train_df = pd.read_csv(parameters['train_set'])
-    #val_df = pd.read_csv(parameters['val_set'])
 
     functions = MODELS_FUNCTIONS[parameters['model']]
     train_loader, val_loader = get_loaders(train_df,
@@ -209,10 +179,19 @@ def train(parameters : Dict):
     model_function = functions['model_fn']
     params = functions['params']
     model = model_function(7, **params)
-    #model = get_efficientnet_model(7)
-    #model = get_faster_rcnn(7)
-    #model = create_efficientdet_model(7, 512, 'efficientdet_d0')
-    wandb.init(project='waste_detector', entity='hlopez')
+
+    wandb.init(
+        project='waste_detector',
+        entity='hlopez',
+        config={
+            'learning_rate': Config.LEARNING_RATE,
+            'weight_decay': Config.WEIGHT_DECAY,
+            'momentum': Config.MOMENTUM,
+            'batch_size': Config.BATCH_SIZE,
+            'total_epochs': Config.EPOCHS,
+            'img_size': Config.IMG_SIZE
+        }
+    )
     print('TRAINING')
     model, train_loss, val_loss = fit(model,
                                       train_loader,
