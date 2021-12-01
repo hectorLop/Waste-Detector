@@ -28,9 +28,33 @@ def aggregate_datasets(annotations_df, images_df):
 def save_to_pickle(data, path):
     with open(path, 'wb') as file:
         pickle.dump(data, file)
+        
+def aggregate_annotations_files(files):
+    categories_df = pd.DataFrame()
+    images_df = pd.DataFrame()
+    annotations_df = pd.DataFrame()
+    
+    for file in files:
+        with open(file, 'r') as file:
+            annotations = json.load(file)
+        
+        print('Concatenating datasets')
+        categories_df = pd.concat([categories_df, pd.DataFrame(annotations['categories'])])
+        categories_df = categories_df.reset_index(drop=True)
+        
+        images_df = pd.concat([images_df, pd.DataFrame(annotations['images'])])
+        images_df = images_df.reset_index(drop=True)
+        
+        annotations_df = pd.concat([annotations_df, pd.DataFrame(annotations['annotations'])])
+        annotations_df = annotations_df.reset_index(drop=True)
 
-def generate_sets(config : Dict):
-    with open(config['annotations'], 'r') as file:
+    print('Aggregating the datasets')
+    annotations_df = aggregate_datasets(annotations_df, images_df)
+        
+    return annotations_df, categories_df
+
+def process_unique_annotations(file):
+    with open(file, 'r') as file:
         annotations = json.load(file)
 
     categories_df = pd.DataFrame(annotations['categories'])
@@ -39,6 +63,15 @@ def generate_sets(config : Dict):
 
     print('Aggregating the datasets')
     annotations_df = aggregate_datasets(annotations_df, images_df)
+    
+    return annotations_df, categories_df
+
+def generate_sets(config : Dict):
+    if len(config['annotations']) == 1:
+        annotations_df, categories_df = process_unique_annotations(config['annotations'])
+    else:
+        annotations_df, categories_df = aggregate_annotations_files(config['annotations'])
+        
     print('Processing the new categories')
     annotations_df, categories_df = process_categories(categories_df,
                                                        annotations_df)
