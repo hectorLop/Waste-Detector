@@ -15,7 +15,7 @@ There are the following garbage bins in Spain:
 
 - Dangerous waste: Red
 
-  <img src="docs/colores-del-reciclaje.webp" alt="MJU-dataset" style="zoom:50%;" />
+  <img src="docs/colores-del-reciclaje.webp" alt="MJU-dataset" style="zoom:30%;" />
 
 ### Datasets
 
@@ -30,16 +30,19 @@ There are the following garbage bins in Spain:
 - [TACO dataset](http://tacodataset.org/) [4]. This dataset a public benchmark for waste object segmentation. Images are collected from mainly outdoor environments such as woods, roads and beaches. It is also annotated in COCO [2] format.
 
   ![MJU-dataset](docs/taco-dataset.png)
+  
+### State
+Performing both the box and class prediction at the same time leads to poor results. The problem will be divided into two scenarios: first, the bounding box predictions using a unique waste class, thus, allowing the classification of the waste inside the bounding box as in [5].
+Besides, I will add more data because actually only the TACO dataset is being used.
 
 ### Roadmap
 
 - [ ] Create a design doc using this [template](https://github.com/eugeneyan/ml-design-docs)
 - [ ] Create a high level diagram
-- [ ] Explore the data
-- [ ] Set a baseline
-- [ ] Set the infrastructure
-- [ ] Optimize both the model and the infrastructure
-- [ ] ...
+- [x] Explore the data
+- [x] Set a baseline
+- [ ] Optimize the model
+- [ ] Set a infrastructure 
 
 ### References
 
@@ -50,3 +53,5 @@ There are the following garbage bins in Spain:
 [3] Lin, T. Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ramanan,  D., ... & Zitnick, C. L. (2014, September). Microsoft coco: Common  objects in context. In European conference on computer vision (pp.  740-755). Springer, Cham.
 
 [4] Proença, P.F.; Simões, P. TACO: Trash Annotations in Context for Litter Detection. arXiv **2020**, arXiv:2003.06975.
+
+[5] S. Majchrowska et al., “Waste detection in Pomerania: non-profit project for detecting waste in environment,” CoRR, vol. abs/2105.06808, 2021.
