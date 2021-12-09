@@ -30,7 +30,7 @@ def get_new_categories(categories_df : pd.DataFrame,
     # Assign the old categories to the new ones
     for idx, cat in enumerate(pd.unique(df['new_cat']), 1):
         if cat not in new_categories:
-            new_categories[cat] = idx
+            new_categories[cat] = 1
 
     return df, new_categories
 
