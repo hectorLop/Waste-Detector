@@ -45,11 +45,19 @@ def annotations_to_device(annotations, device):
         new_annot = {}
         
         for k, v in annotations.items():
-            values = [val.to(device) for val in v]
-            new_annot[k] = values
-            
+            if v:
+                values = [val.to(device) for val in v]
+                new_annot[k] = values
+            else:
+                new_annot[k] = None
     return new_annot
 
 def get_box_class_and_total_loss(loss_dict):
-    if len(loss_dict) == 3:
+    efficientdet_train_keys = ['loss', 'class_loss', 'box_loss']
+    efficientdet_val_keys = ['loss', 'class_loss', 'box_loss', 'detections']
+    keys = list(loss_dict.keys())
+        
+    if keys == efficientdet_train_keys or keys == efficientdet_val_keys:
         return loss_dict['loss'], loss_dict['class_loss'], loss_dict['box_loss']
+    else:
+        return None

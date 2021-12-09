@@ -32,7 +32,6 @@ def train_step(model, train_loader, config, scheduler, optimizer, n_batches):
         # Predict
         images = images.to(config.DEVICE)        
         targets = annotations_to_device(targets, config.DEVICE)
-        
         model.train()
         loss_dict = model(images, targets)
         #print(loss_dict.keys())
@@ -50,7 +49,7 @@ def train_step(model, train_loader, config, scheduler, optimizer, n_batches):
         
         gc.collect()
         
-    scheduler.step()
+    #scheduler.step()
 
     return model, total_loss_accum, class_loss_accum, box_loss_accum
 
@@ -63,9 +62,12 @@ def val_step(model, val_loader, config, n_batches_val):
             images = images.to(config.DEVICE)
             targets = annotations_to_device(targets, config.DEVICE)
             
-            model.train()
-            val_loss_dict = model(images, targets)
-            total_loss, class_loss, box_loss = get_box_class_and_total_loss(val_loss_dict)
+            # The eval() mode add 'detections' to the loss dict
+            model.eval()
+            #targets['img_scale'] = None
+            #targets['img_size'] = None
+            output = model(images, targets)
+            total_loss, class_loss, box_loss = get_box_class_and_total_loss(output)
 
             total_loss_accum += total_loss.item()
             class_loss_accum += class_loss.item()
@@ -76,8 +78,8 @@ def val_step(model, val_loader, config, n_batches_val):
     return model, total_loss_accum, class_loss_accum, box_loss_accum
 
 def fit(model, train_loader, val_loader, config, filepath):
-#     for param in model.parameters():
-#         param.requires_grad = True
+    for param in model.parameters():
+        param.requires_grad = True
 
     model = model.to(config.DEVICE)
 

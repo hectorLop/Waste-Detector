@@ -56,8 +56,8 @@ def efficientdet_collate_fn(batch):
     annotations = {
         "bbox": boxes,
         "cls": labels,
-        "img_size": img_size,
-        "img_scale": img_scale,
+        "img_size": None,
+        "img_scale": None,
     }
 
     return images, annotations
@@ -115,9 +115,6 @@ class WasteImageDatasetNoMask(Dataset):
         img = read_img(info['image_path'])
         n_objects = len(info['bboxes'])
 
-        if img.shape[0] != info['height']:
-            raise ValueError('The first dimmension of the image must be the height')
-        
         boxes = [np.abs(box) for box in info['bboxes']]
         
         labels = info['categories']
@@ -125,9 +122,13 @@ class WasteImageDatasetNoMask(Dataset):
         if self.transforms:
             augs = A.Compose(self.transforms,
                              bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
-            transformed = augs(image=img,
-                               bboxes=boxes,
-                               class_labels=labels)
+            try:
+                transformed = augs(image=img,
+                                   bboxes=boxes,
+                                   class_labels=labels)
+            except:
+                print(boxes)
+                raise ValueError('CACACA')
 
             img = transformed['image']
             boxes = transformed['bboxes']
