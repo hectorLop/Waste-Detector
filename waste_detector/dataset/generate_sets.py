@@ -4,17 +4,19 @@ import pandas as pd
 import argparse
 import yaml
 import pickle
+import os
+import numpy as np
 
 from waste_detector.dataset.format import process_categories
-from waste_detector.dataset.data_split import split_data
+from waste_detector.dataset.utils import split_data, add_background_imgs
 
-def aggregate_datasets(annotations_df, images_df):
+def aggregate_datasets(annotations_df, images_df, imgs_path):
     data = []
 
     for id in annotations_df['image_id']:
         image_data = images_df[images_df['id'] == id]
         
-        file_name = image_data['file_name'].values[0]
+        file_name = os.path.join(imgs_path, image_data['file_name'].values[0])
         width= image_data['width'].values[0]
         height = image_data['height'].values[0]
 
@@ -29,7 +31,7 @@ def save_to_pickle(data, path):
     with open(path, 'wb') as file:
         pickle.dump(data, file)
         
-def aggregate_annotations_files(files):
+def aggregate_annotations_files(files, imgs_path):
     categories_df = pd.DataFrame()
     images_df = pd.DataFrame()
     annotations_df = pd.DataFrame()
@@ -49,11 +51,11 @@ def aggregate_annotations_files(files):
         annotations_df = annotations_df.reset_index(drop=True)
 
     print('Aggregating the datasets')
-    annotations_df = aggregate_datasets(annotations_df, images_df)
+    annotations_df = aggregate_datasets(annotations_df, images_df, imgs_path)
         
     return annotations_df, categories_df
 
-def process_unique_annotations(file):
+def process_unique_annotations(file, imgs_path):
     with open(file, 'r') as file:
         annotations = json.load(file)
 
@@ -62,19 +64,23 @@ def process_unique_annotations(file):
     annotations_df = pd.DataFrame(annotations['annotations'])
 
     print('Aggregating the datasets')
-    annotations_df = aggregate_datasets(annotations_df, images_df)
+    annotations_df = aggregate_datasets(annotations_df, images_df, imgs_path)
     
     return annotations_df, categories_df
 
 def generate_sets(config : Dict):
     if len(config['annotations']) == 1:
-        annotations_df, categories_df = process_unique_annotations(config['annotations'])
+        annotations_df, categories_df = process_unique_annotations(config['annotations'][0], config['imgs_path'])
     else:
-        annotations_df, categories_df = aggregate_annotations_files(config['annotations'])
+        annotations_df, categories_df = aggregate_annotations_files(config['annotations'], config['imgs_path'])
         
     print('Processing the new categories')
     annotations_df, categories_df = process_categories(categories_df,
                                                        annotations_df)
+    
+    background_df = pd.read_csv(config['background_imgs_set'])
+    
+    annotations_df = add_background_imgs(annotations_df, background_df)
 
     print('Preparing the data')
     train_df, val_df, test_df = split_data(annotations_df)
