@@ -49,7 +49,7 @@ def train_step(model, train_loader, config, scheduler, optimizer, n_batches):
         
         gc.collect()
         
-    #scheduler.step()
+    scheduler.step()
 
     return model, total_loss_accum, class_loss_accum, box_loss_accum
 
@@ -78,9 +78,6 @@ def val_step(model, val_loader, config, n_batches_val):
     return model, total_loss_accum, class_loss_accum, box_loss_accum
 
 def fit(model, train_loader, val_loader, config, filepath):
-    for param in model.parameters():
-        param.requires_grad = True
-
     model = model.to(config.DEVICE)
 
     optimizer = torch.optim.SGD(model.parameters(),
@@ -88,7 +85,7 @@ def fit(model, train_loader, val_loader, config, filepath):
                                 momentum=config.MOMENTUM,
                                 weight_decay=config.WEIGHT_DECAY)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-                                                   step_size=5,
+                                                   step_size=15,
                                                    gamma=0.1)
     
     n_batches, n_batches_val = len(train_loader), len(val_loader)
@@ -138,13 +135,13 @@ def fit(model, train_loader, val_loader, config, filepath):
 
             prefix = f"[Epoch {epoch:2d} / {config.EPOCHS:2d}]"
             print(prefix)
-            print(f"{prefix} Train class loss: {train_class_loss:7.3f}. Val class loss: {val_class_loss:7.3f}")
-            print(f"{prefix} Train box loss: {train_box_loss:7.3f}. Val box loss: {val_box_loss:7.3f}")
-            print(f"{prefix} Train loss: {train_loss:7.3f}. Val loss: {val_loss:7.3f}")
+            print(f"{prefix} Train class loss: {train_class_loss:7.5f}. Val class loss: {val_class_loss:7.5f}")
+            print(f"{prefix} Train box loss: {train_box_loss:7.5f}. Val box loss: {val_box_loss:7.5f}")
+            print(f"{prefix} Train loss: {train_loss:7.5f}. Val loss: {val_loss:7.5f}")
 
             if val_loss < best_loss:
                 best_loss = val_loss
-                print(f'{prefix} Save Val loss: {val_loss:7.3f}')
+                print(f'{prefix} Save Val loss: {val_loss:7.5f}')
                 torch.save(model.state_dict(), filepath)
                 
             print(prefix)
@@ -168,8 +165,26 @@ def get_loaders(df_train, df_val, collate_fn, config=Config):
 
     return dl_train, dl_val
 
+def warm_up(model, train_loader, val_loader, config, checkpoint):
+    for param in model.parameters():
+        param.requires_grad = False
+        
+    for param in model.model.class_net.parameters():
+        param.requires_grad = True
+        
+    for param in model.model.box_net.parameters():
+        param.requires_grad = True
+        
+    model, train_loss, val_loss = fit(model,
+                                      train_loader,
+                                      val_loader,
+                                      config,
+                                      checkpoint)
+    
+    return model
+
 def train(parameters : Dict):
-    fix_all_seeds(4444)
+    fix_all_seeds(4089)
     
     with open(parameters['train_set'], 'rb') as file:
         train_df = pickle.load(file)
@@ -184,7 +199,7 @@ def train(parameters : Dict):
     print('Getting the model')
     model_function = functions['model_fn']
     params = functions['params']
-    model = model_function(7, **params)
+    model = model_function(1, **params)
 
     wandb.init(
         project='waste_detector',
@@ -198,7 +213,18 @@ def train(parameters : Dict):
             'img_size': Config.IMG_SIZE
         }
     )
+    
+    if parameters['warm_up']:
+        print('WARMING_UP')
+        warm_up_cfg = Config()
+        warm_up_cfg.EPOCHS = 5
+            
+        model = warm_up(model, train_loader, val_loader, warm_up_cfg, parameters['checkpoint'])
+    
     print('TRAINING')
+    for param in model.parameters():
+        param.requires_grad = True
+        
     model, train_loss, val_loss = fit(model,
                                       train_loader,
                                       val_loader,

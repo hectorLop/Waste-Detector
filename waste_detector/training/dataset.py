@@ -43,10 +43,11 @@ def efficientdet_collate_fn(batch):
     images, targets = tuple(zip(*batch))
     images = torch.stack(images)
     images = images.float()
-
+    
     boxes = [target["boxes"].float() for target in targets]
     # Convert from xyxy to yxyx 
-    boxes = [box[:, [1, 0, 3, 2]] for box in boxes]
+    boxes = [box[:, [1, 0, 3, 2]] if box.nelement() else box for box in boxes]
+
     # Size for each image, the returned size is already a tensor
     img_size = [torch.as_tensor(image.shape[1:3]) for image in images]
     img_scale = [torch.as_tensor(1.0, dtype=torch.float32) for i in range(len(images))]
@@ -59,7 +60,7 @@ def efficientdet_collate_fn(batch):
         "img_size": None,
         "img_scale": None,
     }
-
+    
     return images, annotations
 
 def efficientdet_inference_collate_fn(batch):
@@ -103,7 +104,7 @@ class WasteImageDatasetNoMask(Dataset):
                 'width': np.unique(row['width'])[0],
                 'area': list(row['area']),
                 'iscrowd': list(row['iscrowd']),
-                'image_path': os.path.join(self.config.IMGS_PATH, row['filename'][0]),
+                'image_path': row['filename'][0],
                 'bboxes': list(row['bbox']),
                 'categories': list(row['category_id']),
             }
@@ -113,33 +114,45 @@ class WasteImageDatasetNoMask(Dataset):
 
         # Read the image and rotate it if neccesary
         img = read_img(info['image_path'])
-        n_objects = len(info['bboxes'])
-
-        boxes = [np.abs(box) for box in info['bboxes']]
-        
         labels = info['categories']
         
-        if self.transforms:
-            augs = A.Compose(self.transforms,
-                             bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
-            try:
-                transformed = augs(image=img,
-                                   bboxes=boxes,
-                                   class_labels=labels)
-            except:
-                print(boxes)
-                raise ValueError('CACACA')
+        if info['bboxes'][0] == '[]':
+            if self.transforms:
+                augs = A.Compose(self.transforms)
+                transformed = augs(image=img)
 
-            img = transformed['image']
-            boxes = transformed['bboxes']
-        
-        # Put the channels first, the image is already rotated in format (height, width)
-        img = torch.from_numpy(img.transpose(2,0,1)) # channels first
+                img = transformed['image']
+                boxes = [[0, 0, 0, 0]]
+                
+             # Put the channels first, the image is already rotated in format (height, width)
+            img = torch.from_numpy(img.transpose(2,0,1)) # channels first
 
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        labels = torch.as_tensor(labels, dtype=torch.int64)
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+            labels = torch.as_tensor(labels, dtype=torch.int64)
+        else:
+            boxes = [np.abs(box) for box in info['bboxes']]
 
-        boxes = torchvision.ops.box_convert(boxes, 'xywh', 'xyxy')
+            if self.transforms:
+                augs = A.Compose(self.transforms,
+                                 bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
+                try:
+                    transformed = augs(image=img,
+                                       bboxes=boxes,
+                                       class_labels=labels)
+                except:
+                    print(boxes)
+                    raise ValueError('CACACA')
+
+                img = transformed['image']
+                boxes = transformed['bboxes']
+
+            # Put the channels first, the image is already rotated in format (height, width)
+            img = torch.from_numpy(img.transpose(2,0,1)) # channels first
+
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+            labels = torch.as_tensor(labels, dtype=torch.int64)
+
+            boxes = torchvision.ops.box_convert(boxes, 'xywh', 'xyxy')
 
         target = {
             'boxes': boxes,
