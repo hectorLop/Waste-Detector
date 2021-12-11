@@ -1,6 +1,5 @@
 annotations:
-- /home/data/annotations.json
-imgs_path: /home/data
+- [/home/data/annotations.json, /home/data]
 background_imgs_set: /home/background_dataset/fixed_background_df.csv
 train_path: /home/data/train_1_class.pkl
 val_path: /home/data/val_1_class.pkl

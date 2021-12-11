@@ -2,8 +2,8 @@ annotations:
 - [/home/mju-waste/fixed_train.json, /home/mju-waste/JPEGImages]
 - [/home/mju-waste/fixed_val.json, /home/mju-waste/JPEGImages]
 - [/home/mju-waste/fixed_test.json, /home/mju-waste/JPEGImages]
-imgs_path: /home/mju-waste/JPEGImages
+- [/home/data/annotations.json, /home/data]
 background_imgs_set: /home/background_dataset/fixed_background_df.csv
-train_path: /home/mju-waste/train_1_class.pkl
-val_path: /home/mju-waste/val_1_class.pkl
-test_path: /home/mju-waste/test_1_class.pkl
+train_path: /home/mixed-dataset/train_1_class.pkl
+val_path: /home/mixed-dataset/val_1_class.pkl
+test_path: /home/mixed-dataset/test_1_class.pkl

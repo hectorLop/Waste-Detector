@@ -31,12 +31,14 @@ def save_to_pickle(data, path):
     with open(path, 'wb') as file:
         pickle.dump(data, file)
         
-def aggregate_annotations_files(files, imgs_path):
+def aggregate_annotations_files(data):
     categories_df = pd.DataFrame()
     images_df = pd.DataFrame()
     annotations_df = pd.DataFrame()
     
-    for file in files:
+    for element in data:
+        file, imgs_path = element
+        
         with open(file, 'r') as file:
             annotations = json.load(file)
         
@@ -55,7 +57,9 @@ def aggregate_annotations_files(files, imgs_path):
         
     return annotations_df, categories_df
 
-def process_unique_annotations(file, imgs_path):
+def process_unique_annotations(data):
+    file, imgs_path = data
+
     with open(file, 'r') as file:
         annotations = json.load(file)
 
