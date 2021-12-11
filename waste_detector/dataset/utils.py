@@ -10,13 +10,13 @@ def split_data(annotations_df):
     #print(grouped_df)
     # Use the quantiles of amount of annotations to stratify
     df_images_train, df_images_test = train_test_split(df_images['image_id'],
-                                                       #stratify=df_images['category_id'],
+                                                       stratify=df_images['category_id'],
                                                        test_size=0.2,
                                                        random_state=42)
 
     # Use the quantiles of amount of annotations to stratify
     df_images_train, df_images_val = train_test_split(df_images['image_id'],
-                                                      #stratify=df_images['category_id'],
+                                                      stratify=df_images['category_id'],
                                                       test_size=0.2,
                                                       random_state=2021)
 
