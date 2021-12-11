@@ -53,7 +53,8 @@ def process_categories(
             - pandas.DataFrame: The annotations DataFrame
             - pandas.DataFrame: The categories DataFrame
     """
-    df = annotations_df.copy()
+    df = annotations_df[(annotations_df['category_id'] != 59) & (annotations_df['area'] > 500.)].copy()
+    #df = annotations_df.copy()
 
     # Replaced categories dataframe and new categories
     categories_df, new_categories = get_new_categories(categories_df,
