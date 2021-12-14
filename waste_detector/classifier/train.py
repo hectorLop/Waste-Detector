@@ -17,7 +17,7 @@ from waste_detector.classifier.dataset import (
     WasteDatasetClassification,
     get_transforms
 )
-from waste_detector.training.config import Config
+from waste_detector.classifier.config import Config
 from waste_detector.training.utils import (
     fix_all_seeds
 )
@@ -34,14 +34,14 @@ def train_step(model, train_loader, config, criterion, optimizer):
     for batch_idx, (images, labels) in enumerate(train_loader, 1):
         # Predict
         images = images.to(config.DEVICE)  
-        labels = labels.to(config.device)
+        labels = labels.to(config.DEVICE)
 
         # Set the gradients to zerp before backprop step
         optimizer.zero_grad()
 
         # Get predictions and calculate the loss
         y_preds = model(images.float())
-        y_preds = y_preds.to(config.device)
+        y_preds = y_preds.to(config.DEVICE)
 
         loss = criterion(y_preds, labels)
 
@@ -73,7 +73,7 @@ def val_step(model, val_loader, config, criterion):
             images = images.to(config.DEVICE)
             labels = labels.to(config.DEVICE)
 
-            y_preds = model(images, labels)
+            y_preds = model(images.float())
             y_preds = y_preds.to(config.DEVICE)
 
             loss = criterion(y_preds, labels)
@@ -175,7 +175,7 @@ def train(parameters : Dict):
     train_loader, val_loader = get_loaders(train_df,
                                            val_df)
     print('Getting the model')
-    model = CustomEfficientNet('efficientnet-b0', target_size=7, pretrained=True)
+    model = CustomEfficientNet('efficientnet_b0', target_size=7, pretrained=True)
 
     wandb.init(
         project='waste_detector',
