@@ -12,6 +12,7 @@ import pickle
 import wandb
 
 from sklearn.metrics import accuracy_score
+from sklearn.utils.class_weight import compute_class_weight
 from waste_detector.classifier.model import CustomEfficientNet
 from waste_detector.classifier.dataset import (
     WasteDatasetClassification,
@@ -89,15 +90,19 @@ def val_step(model, val_loader, config, criterion):
     return epoch_loss, acc
 
 
-def fit(model, train_loader, val_loader, config, filepath):
+def fit(model, train_loader, val_loader, config, filepath, weights):
     model = model.to(config.DEVICE)
 
     optimizer = torch.optim.SGD(model.parameters(),
                                 lr=config.LEARNING_RATE,
                                 momentum=config.MOMENTUM,
                                 weight_decay=config.WEIGHT_DECAY)
-
-    criterion = torch.nn.CrossEntropyLoss()
+    
+    if weights is not None:
+        weights = torch.FloatTensor(list(weights)).cuda()
+        criterion = torch.nn.CrossEntropyLoss(weight=weights)
+    else:
+        criterion = torch.nn.CrossEntropyLoss()
     
     n_batches, n_batches_val = len(train_loader), len(val_loader)
 
@@ -174,6 +179,11 @@ def train(parameters : Dict):
 
     train_loader, val_loader = get_loaders(train_df,
                                            val_df)
+    
+    weights = compute_class_weight('balanced',
+                                   classes=np.unique(train_df['category_id'].values),
+                                   y=train_df['category_id'].values)
+
     print('Getting the model')
     model = CustomEfficientNet('efficientnet_b0', target_size=7, pretrained=True)
 
@@ -198,7 +208,8 @@ def train(parameters : Dict):
                                       train_loader,
                                       val_loader,
                                       Config,
-                                      parameters['checkpoint'])
+                                      parameters['checkpoint'],
+                                      weights)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
