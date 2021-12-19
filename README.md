@@ -15,7 +15,12 @@ There are the following garbage bins in Spain:
 
 - Dangerous waste: Red
 
-  <img src="docs/colores-del-reciclaje.webp" alt="MJU-dataset" style="zoom:30%;" />
+  <img src="docs/colores-del-reciclaje.webp" alt="MJU-dataset" style="zoom:10%;" />
+  
+### Project Demo
+There is a demo deployed in [Hugginface spaces](https://huggingface.co/spaces/hlopez/Waste-Detector). It allows a user to upload a custom image or to select an image from a set of example images to test the model. Also, the user can change both the detection threshold and the NMS threshold.
+
+<img src="docs/hugginface_example.png" alt="MJU-dataset" style="zoom:50%;" />
 
 ### Datasets
 
@@ -34,15 +39,6 @@ There are the following garbage bins in Spain:
 ### State
 Performing both the box and class prediction at the same time leads to poor results. The problem will be divided into two scenarios: first, the bounding box predictions using a unique waste class, thus, allowing the classification of the waste inside the bounding box as in [5].
 Besides, I will add more data because actually only the TACO dataset is being used.
-
-### Roadmap
-
-- [ ] Create a design doc using this [template](https://github.com/eugeneyan/ml-design-docs)
-- [ ] Create a high level diagram
-- [x] Explore the data
-- [x] Set a baseline
-- [ ] Optimize the model
-- [ ] Set a infrastructure 
 
 ### References
 
