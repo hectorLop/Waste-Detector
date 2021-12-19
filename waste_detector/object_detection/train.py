@@ -38,7 +38,7 @@ def get_splits(annotations, img_dir, config=Config):
                               seed=config.SEED)
 
     train, test, val = parser.parse(data_splitter=splitter,
-                                    autofix=False)
+                                    autofix=True)
 
     return train, test, val
 
@@ -82,7 +82,7 @@ def warm_up(lighting_model, train_dl, valid_dl, config, checkpoint_callback):
 def train(parameters : Dict):
     fix_all_seeds(Config.SEED)
 
-    train_records, test_records, val_records = get_splits(parameters['annotations'])
+    train_records, test_records, val_records = get_splits(parameters['annotations'], parameters['img_dir'])
 
     train_tfms, valid_tfms, test_tfms = get_transforms(Config)
 
@@ -125,7 +125,7 @@ def train(parameters : Dict):
                                           filename=parameters['checkpoint_name'],
                                           save_top_k=1,
                                           verbose=True,
-                                          monitor='val_loss',
+                                          monitor='valid/loss',
                                           mode='min')
 
     lightning_model = EfficientDetModel(model=model,
