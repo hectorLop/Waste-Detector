@@ -24,13 +24,22 @@ def get_new_categories(categories_df : pd.DataFrame,
 
     # New column with the replacements
     df['new_cat'] = df['name'].replace(replacements)
+    new_categories = {
+        'plastic': 0,
+        'carton': 1,
+        'glass': 2,
+        'organic': 3,
+        'rest': 4,
+        'other': 5,
+        'dangerous': 6
+    }
 
-    new_categories = {}
+    #new_categories = {}
 
     # Assign the old categories to the new ones
-    for idx, cat in enumerate(pd.unique(df['new_cat']), 1):
-        if cat not in new_categories:
-            new_categories[cat] = 1
+    #for idx, cat in enumerate(pd.unique(df['new_cat']), 1):
+    #    if cat not in new_categories:
+    #        new_categories[cat] = idx-1
 
     return df, new_categories
 
