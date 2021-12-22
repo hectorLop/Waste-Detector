@@ -1,9 +1,9 @@
 annotations:
-- [/home/mju-waste/fixed_train.json, /home/mju-waste/JPEGImages]
-- [/home/mju-waste/fixed_val.json, /home/mju-waste/JPEGImages]
-- [/home/mju-waste/fixed_test.json, /home/mju-waste/JPEGImages]
+- [/home/mju-waste/cat_fixed_train.json, /home/mju-waste/JPEGImages]
+- [/home/mju-waste/cat_fixed_val.json, /home/mju-waste/JPEGImages]
+- [/home/mju-waste/cat_fixed_test.json, /home/mju-waste/JPEGImages]
 - [/home/data/annotations.json, /home/data]
 background_imgs_set: /home/background_dataset/fixed_background_df.csv
-train_path: /home/mixed-dataset/train_1_class.pkl
-val_path: /home/mixed-dataset/val_1_class.pkl
-test_path: /home/mixed-dataset/test_1_class.pkl
+train_path: /home/mixed-dataset/mixed_train_7_class.pkl
+val_path: /home/mixed-dataset/mixed_val_7_class.pkl
+test_path: /home/mixed-dataset/mixed_test_7_class.pkl
