@@ -1,4 +1,0 @@
-train_set: /home/data/train.pkl
-val_set: /home/data/val.pkl
-model: efficientdet
-checkpoint: /home/checkpoints/efficientDet.pth
