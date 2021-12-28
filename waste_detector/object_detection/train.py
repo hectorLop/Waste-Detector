@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 import argparse
 import yaml
 import wandb
@@ -55,14 +55,27 @@ def warm_up(
     
     return trainer.model
 
-def train(parameters : Dict) -> None:
-    fix_all_seeds(Config.SEED)
+def get_data_loaders(annotations : str, img_dir : str,
+                     config : Config = Config) -> Tuple[DataLoader]:
+    """
+    Get the dataloaders for each set.
 
+    Args:
+        annotations (str): Annotations filepath.
+        img_dir (str): Images filepath.
+        config (Config): Config object.
+
+    Returns:
+        Tuple[DataLoader]: Tuple containing:
+            - (DataLoader): Training dataloader
+            - (DataLoader): Validation dataloader
+            - (DataLoader): Test dataloader
+    """
     # Training, test and validation records
-    train_records, test_records, val_records = get_splits(parameters['annotations'],
-                                                          parameters['img_dir'])
+    train_records, test_records, val_records = get_splits(annotations,
+                                                          img_dir)
     # Training, validation and test transforms                                                          
-    train_tfms, valid_tfms, test_tfms = get_transforms(Config)
+    train_tfms, valid_tfms, test_tfms = get_transforms(config)
 
     # Datasets
     train_ds = Dataset(train_records, train_tfms)
@@ -70,18 +83,33 @@ def train(parameters : Dict) -> None:
     test_ds = Dataset(test_records, test_tfms)
 
     # Data Loaders
-    train_dl = Config.MODEL_TYPE.train_dl(train_ds,
-                                          batch_size=Config.BATCH_SIZE,
+    train_dl = config.MODEL_TYPE.train_dl(train_ds,
+                                          batch_size=config.BATCH_SIZE,
                                           num_workers=4,
                                           shuffle=True)
-    valid_dl = Config.MODEL_TYPE.valid_dl(valid_ds,
-                                          batch_size=Config.BATCH_SIZE,
+    valid_dl = config.MODEL_TYPE.valid_dl(valid_ds,
+                                          batch_size=config.BATCH_SIZE,
                                           num_workers=4,
                                           shuffle=False)
-    test_dl = Config.MODEL_TYPE.valid_dl(test_ds,
-                                         batch_size=Config.BATCH_SIZE,
+    test_dl = config.MODEL_TYPE.valid_dl(test_ds,
+                                         batch_size=config.BATCH_SIZE,
                                          num_workers=4,
                                          shuffle=False)
+
+    return train_dl, valid_dl, test_dl
+
+def train(parameters : Dict) -> None:
+    """
+    Trains a waste detector model.
+
+    Args:
+        parameters (Dict): Dictionary containing training parameters.
+    """
+    fix_all_seeds(Config.SEED)
+    
+    train_dl, valid_dl, test_dl = get_data_loaders(parameters['annotations'],
+                                                   parameters['img_dir'])
+
     print('Getting the model')
     model = Config.MODEL_TYPE.model(backbone=Config.BACKBONE(pretrained=True),
                                     num_classes=Config.NUM_CLASSES, 
