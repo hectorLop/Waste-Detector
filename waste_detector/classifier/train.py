@@ -1,12 +1,8 @@
 from typing import Dict
 import torch
 import numpy as np
-import json
-import pandas as pd
-import timm
 import argparse
 import gc
-import torchvision
 import yaml
 import pickle
 import wandb
@@ -19,7 +15,7 @@ from waste_detector.classifier.dataset import (
     get_transforms
 )
 from waste_detector.classifier.config import Config
-from waste_detector.training.utils import (
+from waste_detector.classifier.utils import (
     fix_all_seeds
 )
 from torch.utils.data import DataLoader

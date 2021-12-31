@@ -1,13 +1,11 @@
 import torch
-import numpy as np
-import collections
 import albumentations as A
 import cv2
 import torchvision
 
 from typing import List, Callable
 from torch.utils.data import Dataset
-from waste_detector.training.utils import read_img
+from waste_detector.classifier.utils import read_img
 from waste_detector.classifier.utils import crop_img_to_bbox
 
 class CustomNormalization(A.ImageOnlyTransform):
