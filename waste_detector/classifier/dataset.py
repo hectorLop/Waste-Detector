@@ -34,36 +34,25 @@ def get_transforms(config, augment : bool = False) -> List[Callable]:
     ]
 
     if augment:
-        pass
+        augmented_transforms = [
+            A.HorizontalFlip(),
+            A.VerticalFlip(),
+            A.ShiftScaleRotate(rotate_limit=20),
+            A.RGBShift(r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+            A.RandomBrightnessContrast(),
+            A.Blur(blur_limit=(1, 3)),
+        ]
 
-    return transforms
+    return transforms, augmented_transforms
 
 class WasteDatasetClassification(Dataset):
     def __init__(self, df, transforms, config):
         self.df = df
         self.transforms = transforms
         self.config = config
-
-        #cols = [col for col in df.columns if col != 'image_id']
-        #self.temp_df = self.df.groupby(['image_id'])[cols].agg(lambda x: list(x)).reset_index()
-        
-        #self.image_info = collections.defaultdict(dict)
-
-        #for index, row in self.temp_df.iterrows():
-         #   self.image_info[index] = {
-         #       'image_id': np.unique(row['image_id'])[0],
-          #      'height': np.unique(row['height'])[0],
-           #     'width': np.unique(row['width'])[0],
-            #    'area': list(row['area']),
-             #   'iscrowd': list(row['iscrowd']),
-              #  'image_path': row['filename'][0],
-         #       'bboxes': list(row['bbox']),
-          #      'categories': list(row['category_id']),
-           # }
     
     def __getitem__(self, idx):
         info = self.df.iloc[idx, :]
-        #info = self.image_info[idx]
 
         # Read the image and rotate it if neccesary
         img = read_img(info['filename'])
@@ -74,9 +63,16 @@ class WasteDatasetClassification(Dataset):
         label = info['category_id']
         
         if self.transforms:
-                augs = A.Compose(self.transforms)
-                transformed = augs(image=img)
+            common_trans, augmented_trans = self.transforms
+            common_trans = A.Compose(common_trans)
+            # augs = A.Compose(self.transforms)
+            
+            transformed = common_trans(image=img)
+            img = transformed['image']
 
+            if augmented_trans and label != 0:
+                augmented_trans = A.Compose(augmented_trans)
+                transformed = augmented_trans(image=img)
                 img = transformed['image']
 
         # Put the channels first, the image is already rotated in format (height, width)
