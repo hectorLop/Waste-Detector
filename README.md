@@ -1,7 +1,7 @@
 # Waste-Detector
 This repository contains a deep learning-based system to detect and classify waste according to which container it should be thrown into. 
 
-There are the following garbage bins in Spain:
+There are six garbage bins in Spain:
 
 - Organic: Orange
 
@@ -18,13 +18,13 @@ There are the following garbage bins in Spain:
   <img src="docs/colores-del-reciclaje.webp" alt="MJU-dataset" style="zoom:10%;" />
   
 ### Project Demo
-There is a demo deployed in [Hugginface spaces](https://huggingface.co/spaces/hlopez/Waste-Detector). It allows a user to upload a custom image or to select an image from a set of example images to test the model. Also, the user can change both the detection threshold and the NMS threshold.
+There is a demo deployed in [Hugginface spaces](https://huggingface.co/spaces/hlopez/Waste-Detector). It allows a user to upload a custom image or to select an image from a set of example images to test the model. Also, the user can change both the detection threshold and the NMS threshold to optimize the object detection.
 
 <img src="docs/hugginface_example.png" alt="MJU-dataset" style="zoom:50%;" />
 
 ### Datasets
 
-- [MJU-Waste dataset](https://github.com/realwecan/mju-waste) [1]. This dataset contains a set of images annotated in PASCAL VOC [2] format. Object instance annotations in COCO [2] format are also available. This dataset contains RGB images and depth image pairs. [Paper](https://www.mdpi.com/1424-8220/20/14/3816/htm)
+- [MJU-Waste dataset](https://github.com/realwecan/mju-waste) [1]. This dataset contains a set of images annotated in PASCAL VOC [2] format. Object instance annotations in COCO [2] format are also available. This dataset contains RGB images and depth image pairs. The bounding boxes are wrong so they have been calculated using the provided masks. Also, the images were manually labeled into the six desired categories.
 
   
 
@@ -37,8 +37,19 @@ There is a demo deployed in [Hugginface spaces](https://huggingface.co/spaces/hl
   ![MJU-dataset](docs/taco-dataset.png)
   
 ### State
-Performing both the box and class prediction at the same time leads to poor results. The problem will be divided into two scenarios: first, the bounding box predictions using a unique waste class, thus, allowing the classification of the waste inside the bounding box as in [5].
-Besides, I will add more data because actually only the TACO dataset is being used.
+Performing both the box and class prediction at the same time leads to poor results. Therefore, the problem was divided into two scenarios: first, the bounding boxes prediction using a unique waste class, and second, the classification of the waste inside the bounding box as in [5].
+
+**Roadmap:**
+
+- [x] First version using only the TACO dataset
+- [x] Fix the MJU bounding boxes annotations and manually label each image
+- [x] Add the MJU data to the system
+- [x] Deploy on HugginfaceSpaces
+- [ ] Decide whether to add images from other datasets or implement data-centric approaches.
+- [ ] Set a custom infrastructure
+- [ ] Create a CI/CD pipeline
+- [ ] Create a Continuous Training pipeline
+- [ ] Set up a model monitoring system 
 
 ### References
 
