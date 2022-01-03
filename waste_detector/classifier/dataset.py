@@ -2,8 +2,10 @@ import torch
 import albumentations as A
 import cv2
 import torchvision
+import pandas as pd
 
 from typing import List, Callable
+from waste_detector.classifier.config import Config
 from torch.utils.data import Dataset
 from waste_detector.classifier.utils import read_img
 from waste_detector.classifier.utils import crop_img_to_bbox
@@ -44,12 +46,16 @@ def get_transforms(config, augment : bool = False) -> List[Callable]:
     return transforms, augmented_transforms
 
 class WasteDatasetClassification(Dataset):
-    def __init__(self, df, transforms, config):
+    """
+    Dataset for Waste Classification.
+    """
+    def __init__(self, df : pd.DataFrame, transforms : Callable,
+                 config : Config) -> None:
         self.df = df
         self.transforms = transforms
         self.config = config
     
-    def __getitem__(self, idx):
+    def __getitem__(self, idx : int):
         info = self.df.iloc[idx, :]
 
         # Read the image and rotate it if neccesary
@@ -63,11 +69,11 @@ class WasteDatasetClassification(Dataset):
         if self.transforms:
             common_trans, augmented_trans = self.transforms
             common_trans = A.Compose(common_trans)
-            # augs = A.Compose(self.transforms)
             
             transformed = common_trans(image=img)
             img = transformed['image']
 
+            # Augment images that does not represent a plastic
             if augmented_trans and label != 0:
                 augmented_trans = A.Compose(augmented_trans)
                 transformed = augmented_trans(image=img)
