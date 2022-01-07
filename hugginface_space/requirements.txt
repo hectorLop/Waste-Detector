@@ -1,0 +1,4 @@
+icevision[all]
+matplotlib
+effdet
+Pillow==8.4.0
