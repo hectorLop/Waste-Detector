@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import Union
 from icevision import *
 import collections
 import PIL
@@ -12,7 +13,7 @@ import icevision.models.ross.efficientdet
 
 MODEL_TYPE = icevision.models.ross.efficientdet
 
-def get_model(checkpoint_path):
+def get_model(checkpoint_path : str):
     extra_args = {}
     backbone = MODEL_TYPE.backbones.d0
     # The efficientdet model requires an img_size parameter
@@ -27,8 +28,8 @@ def get_model(checkpoint_path):
 
     return model
 
-def get_checkpoint(checkpoint_path):
-    ckpt = torch.load('checkpoint.ckpt', map_location=torch.device('cpu'))
+def get_checkpoint(checkpoint_path : str):
+    ckpt = torch.load(checkpoint_path, map_location=torch.device('cpu'))
 
     fixed_state_dict = collections.OrderedDict()
 
@@ -38,15 +39,11 @@ def get_checkpoint(checkpoint_path):
 
     return fixed_state_dict
 
-def predict(model, image, detection_threshold):
-    if isinstance(image, str):
-        img = PIL.Image.open(image)
-    else:
-        img = PIL.Image.open(BytesIO(image))
-        
+def predict(model : object, image : Union[str, BytesIO], detection_threshold : float):
+    img = PIL.Image.open(image)
+    #img = PIL.Image.open(BytesIO(image))
     img = np.array(img)
     img = PIL.Image.fromarray(img)
-    
     class_map = ClassMap(classes=['Waste'])
     transforms = tfms.A.Adapter([
                     *tfms.A.resize_and_pad(512),
@@ -79,7 +76,7 @@ def prepare_prediction(pred_dict, threshold):
 
     return boxes, image
 
-def predict_class(model, image, bboxes):
+def predict_class(classifier, image, bboxes):
     preds = []
 
     for bbox in bboxes:
@@ -93,7 +90,7 @@ def predict_class(model, image, bboxes):
         tran_image = tran_image.transpose(2, 0, 1)
         tran_image = torch.as_tensor(tran_image, dtype=torch.float).unsqueeze(0)
         print(tran_image.shape)
-        y_preds = model(tran_image)
+        y_preds = classifier(tran_image)
         preds.append(y_preds.softmax(1).detach().numpy())
 
     preds = np.concatenate(preds).argmax(1)

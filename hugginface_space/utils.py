@@ -4,10 +4,10 @@ import numpy as np
 import cv2
 import torch
 
-from  classifier import CustomViT
+from classifier import CustomViT
 from model import get_model
 
-def plot_img_no_mask(image : np.ndarray, boxes, labels):
+def plot_img_no_mask(image : np.ndarray, boxes : torch.Tensor, labels):
     colors = {
         0: (255,255,0),
         1: (255, 0, 0),
@@ -45,11 +45,10 @@ def plot_img_no_mask(image : np.ndarray, boxes, labels):
         cv2.putText(image, texts[labels[i]], (x1, y1-10),
                     cv2.FONT_HERSHEY_SIMPLEX, 4, thickness=5, color=color)
 
-
     plt.axis('off')
     ax.imshow(image)
-    fig.savefig("img.png", bbox_inches='tight')
 
+    fig.savefig("img.png", bbox_inches='tight')
 
 def get_models(
     detection_ckpt : str,
