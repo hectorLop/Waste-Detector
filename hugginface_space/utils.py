@@ -73,7 +73,8 @@ def get_models(
                                 backbone_name='d0',
                                 img_size=512,
                                 classes=['Waste'],
-                                revise_keys=[(r'^model\.', '')])
+                                revise_keys=[(r'^model\.', '')],
+                                map_location='cpu')
 
     det_model = checkpoint_and_model['model']
     det_model.eval()
