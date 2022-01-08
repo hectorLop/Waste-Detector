@@ -4,8 +4,8 @@ import numpy as np
 import cv2
 import torch
 
+from icevision.models.checkpoint import model_from_checkpoint
 from classifier import CustomViT
-from model import get_model
 
 def plot_img_no_mask(image : np.ndarray, boxes : torch.Tensor, labels):
     colors = {
@@ -67,7 +67,15 @@ def get_models(
             - (torch.nn.Module): Classifier model
     """
     print('Loading the detection model')
-    det_model = get_model(detection_ckpt)
+    checkpoint_and_model = model_from_checkpoint(
+                                detection_ckpt,
+                                model_name='ross.efficientdet',
+                                backbone_name='d0',
+                                img_size=512,
+                                classes=['Waste'],
+                                revise_keys=[(r'^model\.', '')])
+
+    det_model = checkpoint_and_model['model']
     det_model.eval()
 
     print('Loading the classifier model')

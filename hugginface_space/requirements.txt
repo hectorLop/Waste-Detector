@@ -1,4 +1,5 @@
 icevision[all]
 matplotlib
 effdet
+mmcv-full
 Pillow==8.4.0

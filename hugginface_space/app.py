@@ -3,13 +3,10 @@ import PIL
 import torch
 
 from utils import plot_img_no_mask, get_models
-from classifier import CustomEfficientNet, CustomViT
-from model import get_model, predict, prepare_prediction, predict_class
+from model import predict, prepare_prediction, predict_class
 
 DET_CKPT = 'efficientDet_icevision.ckpt'
 CLASS_CKPT = 'class_ViT_taco_7_class.pth'
-
-det_model, classifier = get_models(DET_CKPT, CLASS_CKPT)
 
 st.subheader('Upload Custom Image')
 
@@ -55,6 +52,8 @@ nms_threshold = st.slider('NMS threshold',
 st.subheader('Prediction')
 
 if image_file is not None:
+    det_model, classifier = get_models(DET_CKPT, CLASS_CKPT)
+    
     print('Getting predictions')
     if isinstance(image_file, str):
         data = image_file
