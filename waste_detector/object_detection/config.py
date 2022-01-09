@@ -1,14 +1,16 @@
-import torch
 import icevision.models as models
+import torch
+
 
 class Config:
     """
     Config class that defines training parameters and hyperparameters.
     """
-    IMGS_PATH = '/home/data/'
-    
-    DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-    
+
+    IMGS_PATH = "/home/data/"
+
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
     IMG_SIZE = 512
     PRESIZE = 512
 
@@ -19,9 +21,7 @@ class Config:
     # Model creation
     MODEL_TYPE = models.ross.efficientdet
     BACKBONE = MODEL_TYPE.backbones.d0
-    EXTRA_ARGS = {
-        'img_size': IMG_SIZE
-    }
+    EXTRA_ARGS = {"img_size": IMG_SIZE}
     NUM_CLASSES = 2
 
     # Hyperparameters
