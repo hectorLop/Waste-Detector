@@ -1,10 +1,11 @@
 import torch
 
+
 class Config:
-    IMGS_PATH = '/home/data'
-    
-    DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-    
+    IMGS_PATH = "/home/data"
+
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
     IMG_SIZE = 512
     BATCH_SIZE = 16
     EPOCHS = 50

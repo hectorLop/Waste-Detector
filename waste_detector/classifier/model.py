@@ -1,12 +1,13 @@
 import timm
+import torch
 import torch.nn as nn
 
-import torch
 
 def get_efficientnet(model_name):
     model = timm.create_model(model_name, pretrained=True)
 
     return model
+
 
 class CustomEfficientNet(nn.Module):
     """
@@ -24,25 +25,30 @@ class CustomEfficientNet(nn.Module):
     model : nn.Module
         EfficientNet model.
     """
-    def __init__(self, model_name : str = 'efficientnet_b0',
-                 target_size : int = 4, pretrained : bool = True):
+
+    def __init__(
+        self,
+        model_name: str = "efficientnet_b0",
+        target_size: int = 4,
+        pretrained: bool = True,
+    ):
         super().__init__()
         self.model = timm.create_model(model_name, pretrained=True)
-        
+
         # Modify the classifier layer
         in_features = self.model.classifier.in_features
         self.model.classifier = nn.Sequential(
-            #nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.Linear(in_features, 1024),
             nn.ReLU(),
-            #nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.Linear(1024, 512),
             nn.ReLU(),
-            #nn.Dropout(0.5),
-            nn.Linear(512, target_size)
+            # nn.Dropout(0.5),
+            nn.Linear(512, target_size),
         )
-            
-    def forward(self, x : torch.Tensor) -> torch.Tensor:
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.model(x)
 
         return x
