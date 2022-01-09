@@ -1,10 +1,12 @@
 from typing import Dict, Tuple
-from waste_detector.dataset.config import TACO_REPLACEMENTS
 
 import pandas as pd
 
-def get_new_categories(categories_df : pd.DataFrame,
-                       replacements : Dict) -> pd.DataFrame:
+from waste_detector.dataset.config import TACO_REPLACEMENTS
+
+
+def get_new_categories(categories_df: pd.DataFrame,
+                       replacements: Dict) -> pd.DataFrame:
     """
     Get the new categories and its indices
 
@@ -12,7 +14,7 @@ def get_new_categories(categories_df : pd.DataFrame,
         categories_df (pandas.DataFrame): Catagories DataFrame
         replacements (dict): Dictionary containing the name replacements
             for the old categories.
-    
+
     Returns:
         tuple: A tuple containing:
             - pandas.DataFrame: The annotations DataFrame
@@ -23,31 +25,32 @@ def get_new_categories(categories_df : pd.DataFrame,
     df = categories_df.copy()
 
     # New column with the replacements
-    df['new_cat'] = df['name'].replace(replacements)
+    df["new_cat"] = df["name"].replace(replacements)
     new_categories = {
-        'plastic': 0,
-        'carton': 1,
-        'glass': 2,
-        'organic': 3,
-        'rest': 4,
-        'other': 5,
-        'dangerous': 6
+        "plastic": 0,
+        "carton": 1,
+        "glass": 2,
+        "organic": 3,
+        "rest": 4,
+        "other": 5,
+        "dangerous": 6,
     }
 
-    #new_categories = {}
+    # new_categories = {}
 
     # Assign the old categories to the new ones
-    #for idx, cat in enumerate(pd.unique(df['new_cat']), 1):
+    # for idx, cat in enumerate(pd.unique(df['new_cat']), 1):
     #    if cat not in new_categories:
     #        new_categories[cat] = idx-1
 
     return df, new_categories
 
+
 def process_categories(
-    categories_df : pd.DataFrame,
-    annotations_df : pd.DataFrame,
-    replacements : Dict = TACO_REPLACEMENTS
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    categories_df: pd.DataFrame,
+    annotations_df: pd.DataFrame,
+    replacements: Dict = TACO_REPLACEMENTS,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process the categories of a dataset
 
@@ -56,14 +59,16 @@ def process_categories(
         annotations_df (pandas.DataFrame): Annotations DataFrame
         replacements (dict): Dictionary containing the name replacements
             for the old categories.
-    
+
     Returns:
         tuple: A tuple containing:
             - pandas.DataFrame: The annotations DataFrame
             - pandas.DataFrame: The categories DataFrame
     """
-    df = annotations_df[(annotations_df['category_id'] != 59) & (annotations_df['area'] > 500.)].copy()
-    #df = annotations_df.copy()
+    df = annotations_df[
+        (annotations_df["category_id"] != 59) & (annotations_df["area"] > 500.0)
+    ].copy()
+    # df = annotations_df.copy()
 
     # Replaced categories dataframe and new categories
     categories_df, new_categories = get_new_categories(categories_df,
@@ -73,7 +78,7 @@ def process_categories(
 
     for cat in new_categories:
         # Get the category ids attached at a old category
-        old_categories = categories_df[categories_df['new_cat'] == cat]['id']
+        old_categories = categories_df[categories_df["new_cat"] == cat]["id"]
 
         # Assigng the old identifiers the identifier to the new category
         for old_cat in old_categories:
@@ -81,6 +86,6 @@ def process_categories(
                 categories_replacements[old_cat] = new_categories[cat]
 
     # Make the replacement into the annotation
-    df['category_id'] = df['category_id'].replace(categories_replacements)  
+    df["category_id"] = df["category_id"].replace(categories_replacements)
 
-    return df, categories_df                                  
+    return df, categories_df
