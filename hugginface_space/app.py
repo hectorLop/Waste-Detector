@@ -55,11 +55,7 @@ if image_file is not None:
     det_model, classifier = get_models(DET_CKPT, CLASS_CKPT)
     
     print('Getting predictions')
-    if isinstance(image_file, str):
-        data = image_file
-    else:
-        data = image_file.read()
-    pred_dict = predict(det_model, data, detection_threshold)
+    pred_dict = predict(det_model, image_file, detection_threshold)
     print('Fixing the preds')
     boxes, image = prepare_prediction(pred_dict, nms_threshold)
 
