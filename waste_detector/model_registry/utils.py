@@ -2,8 +2,6 @@ import wandb
 import numpy as np
 import torch
 
-ARTIFACT_PATH = 'models'
-
 def publish_model(checkpoint, metric, model_type, backbone, extra_args, name):
     artifact = wandb.Artifact(f'{name}', "model", description='New trained model')
 
@@ -16,7 +14,6 @@ def publish_model(checkpoint, metric, model_type, backbone, extra_args, name):
 
     artifact = wandb.Artifact(name, "model", description='New trained model', metadata=metadata)
     artifact.add_file(checkpoint)
-    artifact.aliases.append('latest')
     artifact.save()
 
 def get_production_model(name, run):
@@ -24,10 +21,27 @@ def get_production_model(name, run):
 
     return model
 
-def promote_to_prod(new_model, prod_model):
-    if prod_model.metadata['metric'] < new_model.metadata['metric']:
+def promote_to_prod(name, run):
+    try:
+        prod_model = run.use_artifact(f'{name}:production')
+    except:
+        prod_model = None
+        
+    new_model = run.use_artifact(f'{name}:latest')
+    
+    if prod_model:
+        if prod_model.metadata['metric'] < new_model.metadata['metric']:
+            new_model.aliases.append('production')
+            new_model.save()
+
+            prod_model.aliases.remove('latest')
+            prod_model.aliases.append('old_prod')
+
+            print('Promoted new model to production')
+        else:
+            print('The model performed badly than the production model')
+    else:
         new_model.aliases.append('production')
         new_model.save()
-
-        prod_model.aliases.remove('latest')
-        prod_model.aliases.append('old_prod')
+        
+        print('Promoted new model to production')
