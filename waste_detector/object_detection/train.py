@@ -1,22 +1,31 @@
 import argparse
 from typing import Dict, Tuple
 
+import torch
+import icevision
 import wandb
 import yaml
+#import sys
+#sys.path.insert(0, '../../../icevision/icevision/')
+
 from icevision.data.dataset import Dataset
 from icevision.metrics import COCOMetric, COCOMetricType
 from icevision.models.ross.efficientdet.lightning import ModelAdapter
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.trainer import Trainer
+from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader
 
 from waste_detector.object_detection.config import Config
-from waste_detector.object_detection.models import EfficientDetModel
+from waste_detector.object_detection.models import EfficientDetModel, MetricsCallback
 from waste_detector.object_detection.utils import (
     fix_all_seeds,
     get_splits,
     get_transforms,
+    get_metrics,
+    get_best_metric
 )
+from waste_detector.model_registry.utils import publish_model, promote_to_prod
 
 
 def warm_up(
@@ -115,18 +124,18 @@ def train(parameters: Dict) -> None:
         num_classes=Config.NUM_CLASSES,
         **Config.EXTRA_ARGS
     )
-    wandb.init(
-        project="waste_detector",
-        entity="hlopez",
-        config={
-            "learning_rate": Config.LEARNING_RATE,
-            "weight_decay": Config.WEIGHT_DECAY,
-            "momentum": Config.MOMENTUM,
-            "batch_size": Config.BATCH_SIZE,
-            "total_epochs": Config.EPOCHS,
-            "img_size": Config.IMG_SIZE,
-        },
-    )
+#     wandb.init(
+#         project="waste_detector",
+#         entity="hlopez",
+#         config={
+#             "learning_rate": Config.LEARNING_RATE,
+#             "weight_decay": Config.WEIGHT_DECAY,
+#             "momentum": Config.MOMENTUM,
+#             "batch_size": Config.BATCH_SIZE,
+#             "total_epochs": Config.EPOCHS,
+#             "img_size": Config.IMG_SIZE,
+#         },
+#     )
 
     metrics = [COCOMetric(metric_type=COCOMetricType.bbox)]
     checkpoint_callback = ModelCheckpoint(
@@ -137,9 +146,11 @@ def train(parameters: Dict) -> None:
         monitor="valid/loss",
         mode="min",
     )
-
+    
+    metrics_callback = MetricsCallback()
+#     torch.set_default_tensor_type(torch.cuda.FloatTensor)
     lightning_model = EfficientDetModel(model=model, metrics=metrics)
-
+    
     if parameters["warm_up"]:
         print("WARMING_UP")
         warm_up_cfg = Config()
@@ -151,11 +162,33 @@ def train(parameters: Dict) -> None:
     print("TRAINING")
     for param in lightning_model.model.parameters():
         param.requires_grad = True
-
+        
+    wandb_logger = WandbLogger(project="waste_detector",
+                               entity="hlopez",
+                               config={
+                                   "learning_rate": Config.LEARNING_RATE,
+                                   "weight_decay": Config.WEIGHT_DECAY,
+                                   "momentum": Config.MOMENTUM,
+                                   "batch_size": Config.BATCH_SIZE,
+                                   "total_epochs": Config.EPOCHS,
+                                   "img_size": Config.IMG_SIZE,
+                               })
+        
     trainer = Trainer(max_epochs=Config.EPOCHS, gpus=1,
-                      callbacks=[checkpoint_callback])
+                      callbacks=[checkpoint_callback, metrics_callback], logger=wandb_logger)
     trainer.fit(lightning_model, train_dl, valid_dl)
-
+    
+    metrics = get_metrics(trainer, MetricsCallback)
+    best_metric = get_best_metric(metrics)
+    
+    publish_model(checkpoint=f'{parameters["checkpoint_path"]}/{parameters["checkpoint_name"]}.ckpt',
+                  metric=best_metric,
+                  model_type=Config.MODEL_TYPE,
+                  backbone=Config.BACKBONE,
+                  extra_args=Config.EXTRA_ARGS,
+                  name='detector')
+    
+    promote_to_prod('detector', wandb_logger.experiment)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

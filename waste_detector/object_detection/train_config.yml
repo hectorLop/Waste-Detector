@@ -1,5 +1,5 @@
-annotations: /home/mixed_annotations.json
+annotations: /home/mixed_annotations_3.json
 img_dir: /home/
 checkpoint_path: /home/checkpoints
-checkpoint_name: efficientDet_icevision
-warm_up: True
+checkpoint_name: detr_icevision
+warm_up: False

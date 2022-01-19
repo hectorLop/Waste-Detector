@@ -71,17 +71,38 @@ def get_transforms(config: Config) -> Tuple[tfms.A.Adapter]:
     """
     train_tfms = tfms.A.Adapter(
         [
-            *tfms.A.aug_tfms(size=config.IMG_SIZE, presize=config.PRESIZE),
+            #*tfms.A.aug_tfms(size=config.IMG_SIZE, presize=config.PRESIZE),
+            tfms.A.Resize(config.IMG_SIZE, config.IMG_SIZE),
             tfms.A.Normalize(),
         ]
     )
 
     valid_tfms = tfms.A.Adapter(
-        [*tfms.A.resize_and_pad(config.IMG_SIZE), tfms.A.Normalize()]
+        [#*tfms.A.resize_and_pad(config.IMG_SIZE), 
+             tfms.A.Resize(config.IMG_SIZE, config.IMG_SIZE),
+             tfms.A.Normalize()
+        ]
     )
 
     test_tfms = tfms.A.Adapter(
-        [*tfms.A.resize_and_pad(config.IMG_SIZE), tfms.A.Normalize()]
+        [#*tfms.A.resize_and_pad(config.IMG_SIZE), 
+             tfms.A.Resize(config.IMG_SIZE, config.IMG_SIZE),
+             tfms.A.Normalize()
+        ]
     )
 
     return train_tfms, valid_tfms, test_tfms
+
+def get_metrics(trainer, class_to_check):
+    for callback in trainer.callbacks:
+        if isinstance(callback, class_to_check):
+            return callback.metrics
+        
+def get_best_metric(metrics):
+    loss, coco = metrics['valid/loss'], metrics['COCOMetric']
+    loss = np.array(loss)
+    coco = np.array(coco)
+    
+    indice = np.argmin(loss)
+    
+    return coco[indice]
