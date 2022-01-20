@@ -65,7 +65,7 @@ def warm_up(
 
 
 def get_data_loaders(
-    annotations: str, img_dir: str, config: Config = Config
+    annotations: str, img_dir: str,  indices : Dict, config: Config = Config
 ) -> Tuple[DataLoader]:
     """
     Get the dataloaders for each set.
@@ -82,7 +82,7 @@ def get_data_loaders(
             - (DataLoader): Test dataloader
     """
     # Training, test and validation records
-    train_records, test_records, val_records = get_splits(annotations, img_dir)
+    train_records, test_records, val_records = get_splits(annotations, img_dir, indices)
     # Training, validation and test transforms
     train_tfms, valid_tfms, test_tfms = get_transforms(config)
 
@@ -115,7 +115,7 @@ def train(parameters: Dict) -> None:
     fix_all_seeds(Config.SEED)
 
     train_dl, valid_dl, test_dl = get_data_loaders(
-        parameters["annotations"], parameters["img_dir"]
+        parameters["annotations"], parameters["img_dir"], parameters['indices']
     )
 
     print("Getting the model")

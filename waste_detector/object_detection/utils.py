@@ -5,7 +5,8 @@ from typing import Tuple
 import icevision.tfms as tfms
 import numpy as np
 import torch
-from icevision.data.data_splitter import RandomSplitter
+import json
+from icevision.data.data_splitter import RandomSplitter, FixedSplitter
 from icevision.data.record_collection import RecordCollection
 from icevision.parsers.coco_parser import COCOBBoxParser
 
@@ -32,7 +33,7 @@ def fix_all_seeds(seed: int = 4496) -> None:
 
 
 def get_splits(
-    annotations: str, img_dir: str, config: Config = Config
+    annotations: str, img_dir: str, indices, config: Config = Config
 ) -> Tuple[RecordCollection]:
     """
     Split the data given the annotations in COCO format.
@@ -48,8 +49,12 @@ def get_splits(
             - (RecordCollection): Testing record
             - (RecordCollection): Validation record
     """
+    with open(indices, 'r') as file:
+        indices_dict = json.load(file)
+    
     parser = COCOBBoxParser(annotations_filepath=annotations, img_dir=img_dir)
-    splitter = RandomSplitter(probs=config.PROBS, seed=config.SEED)
+    #splitter = RandomSplitter(probs=config.PROBS, seed=config.SEED)
+    splitter = FixedSplitter(splits=[indices_dict['train'], indices_dict['val'], indices_dict['test']])
 
     train, test, val = parser.parse(data_splitter=splitter, autofix=True)
 

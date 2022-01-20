@@ -1,4 +1,5 @@
-annotations: /home/mixed_annotations_3.json
+annotations: /home/Waste-Detector/data/mixed_annotations.json
+indices: /home/Waste-Detector/data/indices.json
 img_dir: /home/
 checkpoint_path: /home/checkpoints
 checkpoint_name: detr_icevision
