@@ -47,3 +47,25 @@ def add_background_imgs(annotations_df, background_df):
     )
 
     return annotations_df
+
+def get_detection_indices(annotations_df):
+    df_images = annotations_df.groupby(['image_id'], as_index=False).agg({'category_id': 'count'})
+
+    df_images_train, df_images_test = train_test_split(df_images['image_id'],
+                                                       stratify=df_images['category_id'],
+                                                       test_size=0.2,
+                                                       random_state=2021)
+
+    # Use the quantiles of amount of annotations to stratify
+    df_images_train, df_images_val = train_test_split(df_images['image_id'],
+                                                      stratify=df_images['category_id'],
+                                                      test_size=0.2,
+                                                      random_state=2021)
+
+    # df_images solo posee el id, cell types y numero de anotaciones
+    df_train = annotations_df[annotations_df['image_id'].isin(df_images_train)]
+    df_val = annotations_df[annotations_df['image_id'].isin(df_images_val)]
+    df_test = annotations_df[annotations_df['image_id'].isin(df_images_test)]
+
+    return df_train, df_val, df_test
+
