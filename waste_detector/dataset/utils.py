@@ -52,13 +52,11 @@ def get_detection_indices(annotations_df):
     df_images = annotations_df.groupby(['image_id'], as_index=False).agg({'category_id': 'count'})
 
     df_images_train, df_images_test = train_test_split(df_images['image_id'],
-                                                       stratify=df_images['category_id'],
                                                        test_size=0.2,
-                                                       random_state=2021)
+                                                       random_state=42)
 
     # Use the quantiles of amount of annotations to stratify
     df_images_train, df_images_val = train_test_split(df_images['image_id'],
-                                                      stratify=df_images['category_id'],
                                                       test_size=0.2,
                                                       random_state=2021)
 

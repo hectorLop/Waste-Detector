@@ -1,2 +1,2 @@
-annotations: /home/mixed_annotations_3.json
-output_file: /home/Waste_Detector/data/indices.json
+annotations: /home/Waste-Detector/data/mixed_annotations.json
+output_file: /home/Waste-Detector/data/indices.json

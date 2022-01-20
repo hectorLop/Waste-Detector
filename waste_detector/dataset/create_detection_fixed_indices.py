@@ -14,11 +14,11 @@ def create_indices(config: Dict):
     annotations_df = pd.DataFrame(annotations["annotations"])
 
     train, val, test = get_detection_indices(annotations_df)
-
+    
     data = {
-        'train': train,
-        'val': val,
-        'test': test
+        'train': pd.unique(train['image_id']).tolist(),
+        'val': pd.unique(val['image_id']).tolist(),
+        'test': pd.unique(test['image_id']).tolist()
     }
 
     with open(config['output_file'], 'w') as file:
