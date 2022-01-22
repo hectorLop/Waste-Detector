@@ -25,7 +25,7 @@ from waste_detector.object_detection.utils import (
     get_metrics,
     get_best_metric
 )
-from waste_detector.model_registry.utils import publish_model, promote_to_prod
+from waste_detector.model_registry.utils import publish_model, promote_to_best_model, get_latest_version
 
 
 def warm_up(
@@ -82,14 +82,14 @@ def get_data_loaders(
             - (DataLoader): Test dataloader
     """
     # Training, test and validation records
-    train_records, test_records, val_records = get_splits(annotations, img_dir, indices)
+    train_records, val_records = get_splits(annotations, img_dir, indices)
     # Training, validation and test transforms
-    train_tfms, valid_tfms, test_tfms = get_transforms(config)
+    train_tfms, valid_tfms, _ = get_transforms(config)
 
     # Datasets
     train_ds = Dataset(train_records, train_tfms)
     valid_ds = Dataset(val_records, valid_tfms)
-    test_ds = Dataset(test_records, test_tfms)
+    #test_ds = Dataset(test_records, test_tfms)
 
     # Data Loaders
     train_dl = config.MODEL_TYPE.train_dl(
@@ -98,11 +98,11 @@ def get_data_loaders(
     valid_dl = config.MODEL_TYPE.valid_dl(
         valid_ds, batch_size=config.BATCH_SIZE, num_workers=4, shuffle=False
     )
-    test_dl = config.MODEL_TYPE.valid_dl(
-        test_ds, batch_size=config.BATCH_SIZE, num_workers=4, shuffle=False
-    )
+#     test_dl = config.MODEL_TYPE.valid_dl(
+#         test_ds, batch_size=config.BATCH_SIZE, num_workers=4, shuffle=False
+#     )
 
-    return train_dl, valid_dl, test_dl
+    return train_dl, valid_dl
 
 
 def train(parameters: Dict) -> None:
@@ -114,7 +114,7 @@ def train(parameters: Dict) -> None:
     """
     fix_all_seeds(Config.SEED)
 
-    train_dl, valid_dl, test_dl = get_data_loaders(
+    train_dl, valid_dl = get_data_loaders(
         parameters["annotations"], parameters["img_dir"], parameters['indices']
     )
 
@@ -124,23 +124,26 @@ def train(parameters: Dict) -> None:
         num_classes=Config.NUM_CLASSES,
         **Config.EXTRA_ARGS
     )
-#     wandb.init(
-#         project="waste_detector",
-#         entity="hlopez",
-#         config={
-#             "learning_rate": Config.LEARNING_RATE,
-#             "weight_decay": Config.WEIGHT_DECAY,
-#             "momentum": Config.MOMENTUM,
-#             "batch_size": Config.BATCH_SIZE,
-#             "total_epochs": Config.EPOCHS,
-#             "img_size": Config.IMG_SIZE,
-#         },
-#     )
 
     metrics = [COCOMetric(metric_type=COCOMetricType.bbox)]
+    
+    wandb_logger = WandbLogger(project="waste_detector",
+                               entity="hlopez",
+                               config={
+                                   "learning_rate": Config.LEARNING_RATE,
+                                   "weight_decay": Config.WEIGHT_DECAY,
+                                   "momentum": Config.MOMENTUM,
+                                   "batch_size": Config.BATCH_SIZE,
+                                   "total_epochs": Config.EPOCHS,
+                                   "img_size": Config.IMG_SIZE,
+                               })
+    
+    latest_version = get_latest_version('detector', wandb_logger.experiment)
+    new_version = int(latest_version) + 1
+    
     checkpoint_callback = ModelCheckpoint(
         dirpath=parameters["checkpoint_path"],
-        filename=parameters["checkpoint_name"],
+        filename=f'{parameters["checkpoint_name"]}_v{new_version}',
         save_top_k=1,
         verbose=True,
         monitor="valid/loss",
@@ -163,16 +166,6 @@ def train(parameters: Dict) -> None:
     for param in lightning_model.model.parameters():
         param.requires_grad = True
         
-    wandb_logger = WandbLogger(project="waste_detector",
-                               entity="hlopez",
-                               config={
-                                   "learning_rate": Config.LEARNING_RATE,
-                                   "weight_decay": Config.WEIGHT_DECAY,
-                                   "momentum": Config.MOMENTUM,
-                                   "batch_size": Config.BATCH_SIZE,
-                                   "total_epochs": Config.EPOCHS,
-                                   "img_size": Config.IMG_SIZE,
-                               })
         
     trainer = Trainer(max_epochs=Config.EPOCHS, gpus=1,
                       callbacks=[checkpoint_callback, metrics_callback], logger=wandb_logger)
@@ -181,14 +174,15 @@ def train(parameters: Dict) -> None:
     metrics = get_metrics(trainer, MetricsCallback)
     best_metric = get_best_metric(metrics)
     
-    publish_model(checkpoint=f'{parameters["checkpoint_path"]}/{parameters["checkpoint_name"]}.ckpt',
-                  metric=best_metric,
-                  model_type=Config.MODEL_TYPE,
-                  backbone=Config.BACKBONE,
-                  extra_args=Config.EXTRA_ARGS,
-                  name='detector')
-    
-    promote_to_prod('detector', wandb_logger.experiment)
+    artifact = publish_model(checkpoint=f'{parameters["checkpoint_path"]}/{parameters["checkpoint_name"]}_v{new_version}.ckpt',
+                              metric=best_metric,
+                              model_type=Config.MODEL_TYPE,
+                              backbone=Config.BACKBONE,
+                              extra_args=Config.EXTRA_ARGS,
+                              name='detector',
+                              run=wandb_logger.experiment)
+        
+    promote_to_best_model('detector', wandb_logger.experiment)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

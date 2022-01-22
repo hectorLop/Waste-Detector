@@ -54,11 +54,11 @@ def get_splits(
     
     parser = COCOBBoxParser(annotations_filepath=annotations, img_dir=img_dir)
     #splitter = RandomSplitter(probs=config.PROBS, seed=config.SEED)
-    splitter = FixedSplitter(splits=[indices_dict['train'], indices_dict['val'], indices_dict['test']])
+    splitter = FixedSplitter(splits=[indices_dict['train'], indices_dict['val']])
 
-    train, test, val = parser.parse(data_splitter=splitter, autofix=True)
+    train, val = parser.parse(data_splitter=splitter, autofix=True)
 
-    return train, test, val
+    return train, val
 
 
 def get_transforms(config: Config) -> Tuple[tfms.A.Adapter]:
