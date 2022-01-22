@@ -2,46 +2,50 @@ import wandb
 import numpy as np
 import torch
 
-def publish_model(checkpoint, metric, model_type, backbone, extra_args, name):
-    artifact = wandb.Artifact(f'{name}', "model", description='New trained model')
-
+def publish_model(checkpoint, metric, model_type, backbone, extra_args, name, run):
+    #old_model = run.use_artifact(f'{name}:latest') 
     metadata = {
-        'metric': metric,
+        'val_metric': metric,
+        'test_metric': 0.0,
         'model_type': str(model_type),
         'backbone': str(backbone),
         'extra_args': extra_args,
     }
 
-    artifact = wandb.Artifact(name, "model", description='New trained model', metadata=metadata)
+    artifact = wandb.Artifact(name=f'{name}', type="model", description='Prueba', metadata=metadata)
     artifact.add_file(checkpoint)
-    artifact.save()
+    #artifact.save()
+    print('Publishing current model')
+    #artifact.wait()
+    
+    run.log_artifact(artifact)
 
-def get_production_model(name, run):
-    model = run.use_artifact(f'{name}:production')
+def get_latest_version(name, run):
+    artifact = run.use_artifact(f'{name}:latest')
 
-    return model
+    return artifact.version[1]
 
-def promote_to_prod(name, run):
+def promote_to_best_model(name, run):
     try:
-        prod_model = run.use_artifact(f'{name}:production')
+        best_model = run.use_artifact(f'{name}:best_model')
     except:
-        prod_model = None
+        best_model = None
         
     new_model = run.use_artifact(f'{name}:latest')
     
-    if prod_model:
-        if prod_model.metadata['metric'] < new_model.metadata['metric']:
-            new_model.aliases.append('production')
+    if best_model:
+        if best_model.metadata['metric'] < new_model.metadata['metric']:
+            new_model.aliases.append('best_model')
             new_model.save()
 
-            prod_model.aliases.remove('latest')
-            prod_model.aliases.append('old_prod')
+            best_model.aliases.remove('best_model')
+            best_model.save()
 
-            print('Promoted new model to production')
+            print('Promoted new best model')
         else:
-            print('The model performed badly than the production model')
+            print('This new model does not improve the best model')
     else:
-        new_model.aliases.append('production')
+        new_model.aliases.append('best_model')
         new_model.save()
         
-        print('Promoted new model to production')
+        print('Promoted new model best model')
