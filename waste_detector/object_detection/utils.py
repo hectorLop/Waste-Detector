@@ -81,9 +81,11 @@ def get_test_split(
         indices_dict = json.load(file)
     
     parser = COCOBBoxParser(annotations_filepath=annotations, img_dir=img_dir)
-    splitter = FixedSplitter(splits=[indices_dict['test']])
+    # Is needed to past two indices. Otherwise the parse method returns a RecordCollection
+    # and it will throw an error in training
+    splitter = FixedSplitter(splits=[indices_dict['val'], indices_dict['test']])
 
-    test = parser.parse(data_splitter=splitter, autofix=True)
+    _, test = parser.parse(data_splitter=splitter, autofix=True)
 
     return test
 

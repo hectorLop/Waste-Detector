@@ -5,12 +5,14 @@ import torch
 import icevision
 import wandb
 import yaml
+import glob
 #import sys
 #sys.path.insert(0, '../../../icevision/icevision/')
 
 from icevision.data.dataset import Dataset
 from icevision.metrics import COCOMetric, COCOMetricType
 from icevision.models.ross.efficientdet.lightning import ModelAdapter
+from icevision.models.checkpoint import model_from_checkpoint
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.trainer import Trainer
 from pytorch_lightning.loggers import WandbLogger
@@ -121,11 +123,23 @@ def validate(parameters: Dict) -> None:
 
     run = wandb.init(project="waste_detector", entity="hlopez",)
 
-    best_model_art = run.experiment.use_artifact('detector:best_model')
+    best_model_art = run.use_artifact('detector:best_model')
     model_path = best_model_art.download('models/')
-    model.load_state_dict(torch.load(model_path))
+    model_ckpt = glob.glob(f'{model_path}*')[0]
     
-    
+    checkpoint_and_model = model_from_checkpoint(
+                                model_ckpt,
+                                model_name='ross.efficientdet',
+                                backbone_name='d1',
+                                img_size=512,
+                                classes=['Waste'],
+                                revise_keys=[(r'^model\.', '')],
+                                map_location='cpu')
+
+    model = checkpoint_and_model['model']
+    model = model.to(Config.DEVICE)
+    model.eval()
+        
     metrics_callback = MetricsCallback()
     lightning_model = EfficientDetModel(model=model, metrics=metrics)
         

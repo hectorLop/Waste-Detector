@@ -51,7 +51,7 @@ def promote_to_best_model(new_model, name, run):
 
 def promote_to_production(best_model, name, run):
     try:
-        prod_model = run.use_artifact(f'{name}:best_model')
+        prod_model = run.use_artifact(f'{name}:production')
     except:
         prod_model = None
             
