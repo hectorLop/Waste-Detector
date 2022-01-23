@@ -140,7 +140,7 @@ def train(parameters: Dict) -> None:
     
     latest_version = get_latest_version('detector', wandb_logger.experiment)
     new_version = int(latest_version) + 1
-    
+    print(f'{parameters["checkpoint_name"]}_v{new_version}')
     checkpoint_callback = ModelCheckpoint(
         dirpath=parameters["checkpoint_path"],
         filename=f'{parameters["checkpoint_name"]}_v{new_version}',
@@ -176,13 +176,12 @@ def train(parameters: Dict) -> None:
     
     artifact = publish_model(checkpoint=f'{parameters["checkpoint_path"]}/{parameters["checkpoint_name"]}_v{new_version}.ckpt',
                               metric=best_metric,
-                              model_type=Config.MODEL_TYPE,
-                              backbone=Config.BACKBONE,
+                              model_type=str(Config.MODEL_TYPE).split("'")[1],
+                              backbone=Config.BACKBONE.model_name,
                               extra_args=Config.EXTRA_ARGS,
                               name='detector',
                               run=wandb_logger.experiment)
         
-    promote_to_best_model('detector', wandb_logger.experiment)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
