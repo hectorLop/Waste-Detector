@@ -7,36 +7,34 @@ def publish_model(checkpoint, metric, model_type, backbone, extra_args, name, ru
     metadata = {
         'val_metric': metric,
         'test_metric': 0.0,
-        'model_type': str(model_type),
-        'backbone': str(backbone),
+        'model_type': model_type,
+        'backbone': backbone,
         'extra_args': extra_args,
     }
 
     artifact = wandb.Artifact(name=f'{name}', type="model", description='Prueba', metadata=metadata)
     artifact.add_file(checkpoint)
-    #artifact.save()
-    print('Publishing current model')
-    #artifact.wait()
     
-    run.log_artifact(artifact)
+    print('Publishing current model...')
+    promote_to_best_model(artifact, name, run)
 
 def get_latest_version(name, run):
     artifact = run.use_artifact(f'{name}:latest')
 
     return artifact.version[1]
 
-def promote_to_best_model(name, run):
+def promote_to_best_model(new_model, name, run):
     try:
         best_model = run.use_artifact(f'{name}:best_model')
     except:
         best_model = None
         
-    new_model = run.use_artifact(f'{name}:latest')
+    aliases = ['latest']
     
     if best_model:
-        if best_model.metadata['metric'] < new_model.metadata['metric']:
-            new_model.aliases.append('best_model')
-            new_model.save()
+        print(best_model.metadata['val_metric'], new_model.metadata['val_metric'])
+        if best_model.metadata['val_metric'] < new_model.metadata['val_metric']:
+            aliases.append('best_model')
 
             best_model.aliases.remove('best_model')
             best_model.save()
@@ -45,7 +43,8 @@ def promote_to_best_model(name, run):
         else:
             print('This new model does not improve the best model')
     else:
-        new_model.aliases.append('best_model')
-        new_model.save()
+        aliases.append('best_model')
         
-        print('Promoted new model best model')
+        print('There is no best_model')
+        
+    run.log_artifact(new_model, aliases=aliases)
