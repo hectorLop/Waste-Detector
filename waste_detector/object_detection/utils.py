@@ -60,6 +60,33 @@ def get_splits(
 
     return train, val
 
+def get_test_split(
+    annotations: str, img_dir: str, indices
+) -> Tuple[RecordCollection]:
+    """
+    Split the data given the annotations in COCO format.
+
+    Args:
+        annotations (str): Annotations filepath.
+        img_dir (str): Images filepath.
+        config (Config): Config object
+
+    Returns:
+        Tuple[RecordCollection]: Tuple containing:
+            - (RecordCollection): Training record
+            - (RecordCollection): Testing record
+            - (RecordCollection): Validation record
+    """
+    with open(indices, 'r') as file:
+        indices_dict = json.load(file)
+    
+    parser = COCOBBoxParser(annotations_filepath=annotations, img_dir=img_dir)
+    splitter = FixedSplitter(splits=[indices_dict['test']])
+
+    test = parser.parse(data_splitter=splitter, autofix=True)
+
+    return test
+
 
 def get_transforms(config: Config) -> Tuple[tfms.A.Adapter]:
     """
