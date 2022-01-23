@@ -48,3 +48,26 @@ def promote_to_best_model(new_model, name, run):
         print('There is no best_model')
         
     run.log_artifact(new_model, aliases=aliases)
+
+def promote_to_production(best_model, name, run):
+    try:
+        prod_model = run.use_artifact(f'{name}:best_model')
+    except:
+        prod_model = None
+            
+    if prod_model:
+        if prod_model.metadata['test_metric'] < best_model.metadata['test_metric']:
+            prod_model.aliases.remove('production')
+            prod_model.save()
+
+            best_model.aliases.append('production')
+            best_model.save()
+
+            print('Promoted new model to production')
+        else:
+            print('This new model does not improve the production model')
+    else:
+        best_model.aliases.append('production')
+        best_model.save()
+        
+        print('There is no production model so the best_model is promoted')
