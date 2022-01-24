@@ -19,7 +19,7 @@ from waste_detector.classifier.dataset import (
 )
 from waste_detector.classifier.model import CustomEfficientNet
 from waste_detector.classifier.utils import fix_all_seeds
-
+from waste_detector.model_registry.utils import publish_classifier, get_latest_version
 
 def train_step(
     model : torch.nn.Module,
@@ -124,6 +124,7 @@ def fit(
 
     best_loss = np.inf
     val_loss_accum, train_loss_accum = [], []
+    train_acc_accum, val_acc_accum = [], []
 
     with torch.cuda.device(config.DEVICE):
         for epoch in range(1, config.EPOCHS + 1):
@@ -131,6 +132,7 @@ def fit(
                 model, train_loader, config, criterion, optimizer
             )
 
+            train_acc_accum.append(train_acc)
             train_loss = train_loss / n_batches
             train_loss_accum.append(train_loss)
 
@@ -138,6 +140,7 @@ def fit(
 
             val_loss, val_acc = val_step(model, val_loader, config, criterion)
 
+            val_acc_accum.append(val_acc)
             val_loss = val_loss / n_batches_val
             val_loss_accum.append(val_loss)
 
@@ -165,7 +168,7 @@ def fit(
 
             print(prefix)
 
-    return model, train_loss_accum, val_loss_accum
+    return model, train_loss_accum, val_loss_accum, train_acc_accum, val_acc_accum
 
 
 def get_loaders(
@@ -210,8 +213,8 @@ def train(parameters: Dict):
     model = CustomEfficientNet("efficientnet_b0", target_size=7,
                                pretrained=True)
 
-    wandb.init(
-        project="waste_detector",
+    run = wandb.init(
+        project="waste_classifier",
         entity="hlopez",
         config={
             "learning_rate": Config.LEARNING_RATE,
@@ -223,13 +226,26 @@ def train(parameters: Dict):
         },
     )
 
+    latest_version = get_latest_version('classifier', run)
+    new_version = int(latest_version) + 1
+
+    ckpt_name = f'{parameters["checkpoint"]}_v{new_version}.pth'
+
     print("TRAINING")
     for param in model.parameters():
         param.requires_grad = True
 
-    model, train_loss, val_loss = fit(model, train_loader, val_loader, Config,
-                                      parameters["checkpoint"], weights)
+    model, train_loss, val_loss, train_acc, val_acc = fit(model, train_loader, val_loader, Config,
+                                                          ckpt_name, weights)
 
+    best_metric_idx = np.argmin(val_loss)
+    best_metric = val_acc[best_metric_idx]
+    
+    artifact = publish_classifier(checkpoint=ckpt_name,
+                              metric=best_metric,
+                              model_name=model.model_name,
+                              name='classifier',
+                              run=run)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

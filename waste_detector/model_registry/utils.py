@@ -18,8 +18,24 @@ def publish_model(checkpoint, metric, model_type, backbone, extra_args, name, ru
     print('Publishing current model...')
     promote_to_best_model(artifact, name, run)
 
+def publish_classifier(checkpoint, metric, model_name, name, run):
+    metadata = {
+        'val_metric': metric,
+        'test_metric': 0.0,
+        'model_name': model_name,
+    }
+
+    artifact = wandb.Artifact(name=f'{name}', type="model", description='New model', metadata=metadata)
+    artifact.add_file(checkpoint)
+    
+    print('Publishing current model...')
+    promote_to_best_model(artifact, name, run)
+
 def get_latest_version(name, run):
-    artifact = run.use_artifact(f'{name}:latest')
+    try: 
+        artifact = run.use_artifact(f'{name}:latest')
+    except:
+        return -1
 
     return artifact.version[1]
 
