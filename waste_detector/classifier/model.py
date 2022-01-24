@@ -33,6 +33,7 @@ class CustomEfficientNet(nn.Module):
         pretrained: bool = True,
     ):
         super().__init__()
+        self.model_name = model_name
         self.model = timm.create_model(model_name, pretrained=True)
 
         # Modify the classifier layer

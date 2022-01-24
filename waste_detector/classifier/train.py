@@ -177,7 +177,7 @@ def get_loaders(
     config : Config = Config
 ) -> Tuple[DataLoader, DataLoader]:
     ds_train = WasteDatasetClassification(
-        df_train, get_transforms(config, augment=True), config
+        df_train, get_transforms(config, augment=False), config
     )
     dl_train = DataLoader(
         ds_train, batch_size=config.BATCH_SIZE, shuffle=True, num_workers=4

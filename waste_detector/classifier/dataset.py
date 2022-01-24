@@ -34,7 +34,7 @@ def get_transforms(config, augment: bool = False) -> List[Callable]:
                  interpolation=cv2.INTER_NEAREST),
         CustomNormalization(p=1),
     ]
-
+        
     if augment:
         augmented_transforms = [
             A.HorizontalFlip(),
@@ -44,6 +44,8 @@ def get_transforms(config, augment: bool = False) -> List[Callable]:
             A.RandomBrightnessContrast(),
             A.Blur(blur_limit=(1, 3)),
         ]
+    else:
+        augmented_transforms = []
 
     return transforms, augmented_transforms
 
