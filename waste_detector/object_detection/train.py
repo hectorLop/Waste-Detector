@@ -25,7 +25,7 @@ from waste_detector.object_detection.utils import (
     get_metrics,
     get_best_metric
 )
-from waste_detector.model_registry.utils import publish_model, promote_to_best_model, get_latest_version
+from waste_detector.model_registry.utils import publish_model, get_latest_version
 
 
 def warm_up(
@@ -140,7 +140,7 @@ def train(parameters: Dict) -> None:
     
     latest_version = get_latest_version('detector', wandb_logger.experiment)
     new_version = int(latest_version) + 1
-    print(f'{parameters["checkpoint_name"]}_v{new_version}')
+
     checkpoint_callback = ModelCheckpoint(
         dirpath=parameters["checkpoint_path"],
         filename=f'{parameters["checkpoint_name"]}_v{new_version}',
