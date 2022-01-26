@@ -6,8 +6,11 @@ import icevision
 import wandb
 import yaml
 import glob
-#import sys
-#sys.path.insert(0, '../../../icevision/icevision/')
+
+import sys
+sys.path.insert(0, '/home/Wandb-MV/')
+
+from wandb_mv.versioner import Versioner 
 
 from icevision.data.dataset import Dataset
 from icevision.metrics import COCOMetric, COCOMetricType
@@ -152,8 +155,18 @@ def validate(parameters: Dict) -> None:
     test_metric = get_best_metric(metrics)
 
     best_model_art.metadata['test_metric'] = test_metric
+    print(best_model_art)
+    versioner = Versioner(run)
+    versioner.promote_model(new_model=best_model_art,
+                            artifact_name='detector',
+                            artifact_type='model',
+                            comparision_metric='test_metric',
+                            promotion_alias='production',
+                            comparision_type='smaller',
+                            already_deployed=True
+                           )
     
-    promote_to_production(best_model_art, 'detector', run)
+#     promote_to_production(best_model_art, 'detector', run)
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -5,8 +5,10 @@ import torch
 import icevision
 import wandb
 import yaml
-#import sys
-#sys.path.insert(0, '../../../icevision/icevision/')
+import sys
+sys.path.insert(0, '/home/Wandb-MV/')
+
+from wandb_mv.versioner import Versioner 
 
 from icevision.data.dataset import Dataset
 from icevision.metrics import COCOMetric, COCOMetricType
@@ -174,13 +176,38 @@ def train(parameters: Dict) -> None:
     metrics = get_metrics(trainer, MetricsCallback)
     best_metric = get_best_metric(metrics)
     
-    artifact = publish_model(checkpoint=f'{parameters["checkpoint_path"]}/{parameters["checkpoint_name"]}_v{new_version}.ckpt',
-                              metric=best_metric,
-                              model_type=str(Config.MODEL_TYPE).split("'")[1],
-                              backbone=Config.BACKBONE.model_name,
-                              extra_args=Config.EXTRA_ARGS,
-                              name='detector',
-                              run=wandb_logger.experiment)
+    versioner = Versioner(wandb_logger.experiment)
+    
+    artifact = versioner.create_artifact(
+                                checkpoint=f'{parameters["checkpoint_path"]}/{parameters["checkpoint_name"]}_v{new_version}.ckpt',
+                                artifact_name='detector',
+                                artifact_type='model',
+                                description='Prueba Wandb-MV',
+                                metadata={
+                                    'val_metric': best_metric,
+                                    'test_metric': 0.0,
+                                    'model_type': str(Config.MODEL_TYPE).split("'")[1],
+                                    'backbone': Config.BACKBONE.model_name,
+                                    'extra_args': Config.EXTRA_ARGS,
+                                }
+                )
+    
+    versioner.promote_model(new_model=artifact,
+                            artifact_name='detector',
+                            artifact_type='model',
+                            comparision_metric='val_metric',
+                            promotion_alias='best_model',
+                            comparision_type='smaller'
+                           )
+            
+    
+#     artifact = publish_model(checkpoint=f'{parameters["checkpoint_path"]}/{parameters["checkpoint_name"]}_v{new_version}.ckpt',
+#                               metric=best_metric,
+#                               model_type=str(Config.MODEL_TYPE).split("'")[1],
+#                               backbone=Config.BACKBONE.model_name,
+#                               extra_args=Config.EXTRA_ARGS,
+#                               name='detector',
+#                               run=wandb_logger.experiment)
         
 
 if __name__ == "__main__":
