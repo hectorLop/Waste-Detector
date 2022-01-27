@@ -3,6 +3,11 @@ import gc
 import pickle
 from typing import Any, Dict, List, Optional, Tuple, Any
 
+import sys
+sys.path.insert(0, '/home/Wandb-MV/')
+
+from wandb_mv.versioner import Versioner 
+
 import numpy as np
 import pandas as pd
 import torch
@@ -241,11 +246,26 @@ def train(parameters: Dict):
     best_metric_idx = np.argmin(val_loss)
     best_metric = val_acc[best_metric_idx]
     
-    artifact = publish_classifier(checkpoint=ckpt_name,
-                              metric=best_metric,
-                              model_name=model.model_name,
-                              name='classifier',
-                              run=run)
+    versioner = Versioner(run)
+    
+    artifact = versioner.create_artifact(
+                                checkpoint=ckpt_name,
+                                artifact_name='classifier',
+                                artifact_type='model',
+                                description='Prueba Wandb-MV',
+                                metadata = {
+                                    'val_metric': best_metric,
+                                    'test_metric': 0.0,
+                                    'model_name': model.model_name,
+                                })
+    
+    versioner.promote_model(new_model=artifact,
+                            artifact_name='classifier',
+                            artifact_type='model',
+                            comparision_metric='val_metric',
+                            promotion_alias='best_model',
+                            comparision_type='smaller'
+                           )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
