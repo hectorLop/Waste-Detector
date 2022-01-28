@@ -1,11 +1,8 @@
-import pytest
-
-import icevision
 from icevision.tfms.albumentations import Adapter
 from icevision.data.record_collection import RecordCollection
-from waste_detector.config import BASE_DIR
 from waste_detector.object_detection.config import Config
 from waste_detector.object_detection.utils import get_transforms, get_splits
+from tests import ANNOTATIONS, IMG_DIR, INDICES
 
 def test_get_transforms():
     """
@@ -21,14 +18,14 @@ def test_get_transforms():
     # Assert transforms list are not empty
     assert (train_tfms.tfms_list and val_tfms.tfms_list and test_tfms.tfms_list)
 
-def test_get_splits(mocker):
+def test_get_splits():
     """
     Test the get_splits() function.
     """
-    train, test, val = get_splits(annotations=str(BASE_DIR) + '/TACO-master/data/annotations.json',
-                                  img_dir=str(BASE_DIR) + '/TACO-master/data/')
+    train, val = get_splits(annotations=ANNOTATIONS,
+                            img_dir=IMG_DIR,
+                            indices=INDICES)
 
-    assert (train and test and val)
+    assert (train and val)
     assert(isinstance(train, RecordCollection) and 
-           isinstance(test, RecordCollection) and 
            isinstance(val, RecordCollection))
