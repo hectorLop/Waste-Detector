@@ -1,7 +1,7 @@
-from tests import TRAIN_CLASS, VAL_CLASS
 from waste_detector.classifier.train import get_loaders, fit
 from waste_detector.classifier.model import CustomEfficientNet
 from waste_detector.classifier.config import Config
+from tests import TRAIN_CLASS, VAL_CLASS
 import pickle
 import torch
 from torch.utils.data import DataLoader
