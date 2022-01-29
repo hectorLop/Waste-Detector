@@ -1,0 +1,7 @@
+icevision[all]
+pandas
+effdet
+matplotlib
+wandb-mv
+mmcv-full
+Pillow
