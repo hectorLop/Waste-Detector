@@ -3,8 +3,8 @@ import gc
 import pickle
 from typing import Any, Dict, List, Optional, Tuple, Any
 
-import sys
-sys.path.insert(0, '/home/Wandb-MV/')
+#import sys
+#sys.path.insert(0, '/home/Wandb-MV/')
 
 from wandb_mv.versioner import Versioner 
 
@@ -131,24 +131,24 @@ def fit(
     val_loss_accum, train_loss_accum = [], []
     train_acc_accum, val_acc_accum = [], []
 
-    with torch.cuda.device(config.DEVICE):
-        for epoch in range(1, config.EPOCHS + 1):
-            train_loss, train_acc = train_step(
-                model, train_loader, config, criterion, optimizer
-            )
+    for epoch in range(1, config.EPOCHS + 1):
+        train_loss, train_acc = train_step(
+            model, train_loader, config, criterion, optimizer
+        )
 
-            train_acc_accum.append(train_acc)
-            train_loss = train_loss / n_batches
-            train_loss_accum.append(train_loss)
+        train_acc_accum.append(train_acc)
+        train_loss = train_loss / n_batches
+        train_loss_accum.append(train_loss)
 
-            gc.collect()
+        gc.collect()
 
-            val_loss, val_acc = val_step(model, val_loader, config, criterion)
+        val_loss, val_acc = val_step(model, val_loader, config, criterion)
 
-            val_acc_accum.append(val_acc)
-            val_loss = val_loss / n_batches_val
-            val_loss_accum.append(val_loss)
+        val_acc_accum.append(val_acc)
+        val_loss = val_loss / n_batches_val
+        val_loss_accum.append(val_loss)
 
+        try:
             wandb.log(
                 {
                     "epoch": epoch,
@@ -158,20 +158,24 @@ def fit(
                     "val_acc": val_acc,
                 }
             )
+        except:
+            pass
 
-            gc.collect()
+        gc.collect()
 
-            prefix = f"[Epoch {epoch:2d} / {config.EPOCHS:2d}]"
-            print(prefix)
-            print(f"{prefix} Train loss: {train_loss:7.5f}. Val loss: {val_loss:7.5f}")
-            print(f"{prefix} Train acc: {train_acc:7.5f}. Val acc: {val_acc:7.5f}")
+        prefix = f"[Epoch {epoch:2d} / {config.EPOCHS:2d}]"
+        print(prefix)
+        print(f"{prefix} Train loss: {train_loss:7.5f}. Val loss: {val_loss:7.5f}")
+        print(f"{prefix} Train acc: {train_acc:7.5f}. Val acc: {val_acc:7.5f}")
 
-            if val_loss < best_loss:
-                best_loss = val_loss
-                print(f"{prefix} Save Val loss: {val_loss:7.5f}")
+        if val_loss < best_loss:
+            best_loss = val_loss
+            print(f"{prefix} Save Val loss: {val_loss:7.5f}")
+
+            if filepath:
                 torch.save(model.state_dict(), filepath)
 
-            print(prefix)
+        print(prefix)
 
     return model, train_loss_accum, val_loss_accum, train_acc_accum, val_acc_accum
 
