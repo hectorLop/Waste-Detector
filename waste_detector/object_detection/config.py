@@ -1,3 +1,4 @@
+from pyexpat import model
 import sys
 sys.path.insert(0, '../../../icevision/icevision/')
 
@@ -8,28 +9,28 @@ class Config:
     """
     Config class that defines training parameters and hyperparameters.
     """
-    IMGS_PATH = '/home/data/'
+    imgs_path = '/home/data/'
     
-    DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    IMG_SIZE = 512
-    PRESIZE = 512
+    img_size = 512
+    presize = 512
 
     # Size of each set (training, test, validation)
-    PROBS = [0.65, 0.2, 0.15]
-    SEED = 2021
+    probs = [0.65, 0.2, 0.15]
+    seed = 2021
 
     # Model creation
-    MODEL_TYPE = models.ross.efficientdet
-    BACKBONE = MODEL_TYPE.backbones.d0
-    EXTRA_ARGS = {
-        'img_size': IMG_SIZE
+    model_type = models.ross.efficientdet
+    backbone = model_type.backbones.d0
+    extra_args = {
+        'img_size': img_size
     }
-    NUM_CLASSES = 2
+    num_classes = 2
 
     # Hyperparameters
-    BATCH_SIZE = 8
-    EPOCHS = 1
-    LEARNING_RATE = 0.001
-    WEIGHT_DECAY = 0.0000001
-    MOMENTUM = 0.9
+    batch_size = 8
+    epochs = 1
+    learning_rate = 0.001
+    weight_decay = 0.0000001
+    momentum = 0.9
