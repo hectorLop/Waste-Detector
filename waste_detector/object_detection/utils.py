@@ -1,5 +1,6 @@
 import os
 import random
+import importlib
 from typing import Tuple
 
 import icevision.tfms as tfms
@@ -12,6 +13,18 @@ from icevision.parsers.coco_parser import COCOBBoxParser
 
 from waste_detector.object_detection.config import Config
 
+def get_object_from_str(s):
+    """Get object from formatted string (loadable function or class)
+
+    :param str s: formatted string like sklearn.metrics.r2_score
+    :return: function or class
+    :raise Exception: when string is not a valid python class
+    """
+    pm = s.rsplit(".", 1)
+    if len(pm) < 2:
+        raise Exception("'%s' does not exist as python class" % s)
+    mod = importlib.import_module(pm[0])
+    return getattr(mod, pm[1])
 
 def fix_all_seeds(seed: int = 4496) -> None:
     """
@@ -106,21 +119,21 @@ def get_transforms(config: Config) -> Tuple[tfms.A.Adapter]:
     train_tfms = tfms.A.Adapter(
         [
             #*tfms.A.aug_tfms(size=config.IMG_SIZE, presize=config.PRESIZE),
-            tfms.A.Resize(config.IMG_SIZE, config.IMG_SIZE),
+            tfms.A.Resize(config.img_size, config.img_size),
             tfms.A.Normalize(),
         ]
     )
 
     valid_tfms = tfms.A.Adapter(
         [#*tfms.A.resize_and_pad(config.IMG_SIZE), 
-             tfms.A.Resize(config.IMG_SIZE, config.IMG_SIZE),
+             tfms.A.Resize(config.img_size, config.img_size),
              tfms.A.Normalize()
         ]
     )
 
     test_tfms = tfms.A.Adapter(
         [#*tfms.A.resize_and_pad(config.IMG_SIZE), 
-             tfms.A.Resize(config.IMG_SIZE, config.IMG_SIZE),
+             tfms.A.Resize(config.img_size, config.img_size),
              tfms.A.Normalize()
         ]
     )

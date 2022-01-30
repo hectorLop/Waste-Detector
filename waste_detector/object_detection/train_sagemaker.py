@@ -20,7 +20,8 @@ from waste_detector.object_detection.utils import (
     get_splits,
     get_transforms,
     get_metrics,
-    get_best_metric
+    get_best_metric,
+    get_object_from_str
 )
 from waste_detector.model_registry.utils import get_latest_version
 
@@ -89,11 +90,11 @@ def get_data_loaders(
     #test_ds = Dataset(test_records, test_tfms)
 
     # Data Loaders
-    train_dl = config.MODEL_TYPE.train_dl(
-        train_ds, batch_size=config.BATCH_SIZE, num_workers=4, shuffle=True
+    train_dl = config.model_type.train_dl(
+        train_ds, batch_size=config.batch_size, num_workers=4, shuffle=True
     )
-    valid_dl = config.MODEL_TYPE.valid_dl(
-        valid_ds, batch_size=config.BATCH_SIZE, num_workers=4, shuffle=False
+    valid_dl = config.model_type.valid_dl(
+        valid_ds, batch_size=config.batch_size, num_workers=4, shuffle=False
     )
 #     test_dl = config.MODEL_TYPE.valid_dl(
 #         test_ds, batch_size=config.BATCH_SIZE, num_workers=4, shuffle=False
@@ -109,16 +110,20 @@ def train(parameters: Dict) -> None:
     Args:
         parameters (Dict): Dictionary containing training parameters.
     """
-    config = Config(parameters)
+    config = parameters
     fix_all_seeds(config.seed)
+    
+    config.model_type = get_object_from_str(config.model_type)
+    config.backbone = get_object_from_str(config.backbone)
 
     train_dl, valid_dl = get_data_loaders(
-        config.annotations, config.img_dir, config.indices
+        config.annotations, config.img_dir, config.indices, config
     )
 
     extra_args = {
         'img_size': config.img_size
     }
+    
 
     print("Getting the model")
     model = config.model_type.model(
@@ -156,7 +161,7 @@ def train(parameters: Dict) -> None:
 #     torch.set_default_tensor_type(torch.cuda.FloatTensor)
     lightning_model = EfficientDetModel(model=model, metrics=metrics)
     
-    if parameters["warm_up"]:
+    if config.warm_up:
         print("WARMING_UP")
         old_epochs = config.epochs
         config.epochs = 5
@@ -208,13 +213,13 @@ if __name__ == "__main__":
     parser.add_argument("--annotations", type=str)
     parser.add_argument("--img_dir", type=str)
     parser.add_argument("--indices", type=str)
-    parser.add_argument("--chekpoint_path", type=str)
+    parser.add_argument("--checkpoint_path", type=str)
     parser.add_argument("--checkpoint_name", type=str)
     parser.add_argument("--warm_up", type=bool, default=False)
 
     parser.add_argument("--seed", type=int, default=2021)
-    parser.add_argument("--model_type", type=Callable) # Use string and cast to callable?
-    parser.add_argument("--backbone", type=Callable) # Use string and cast to callable?
+    parser.add_argument("--model_type", type=str) # Use string and cast to callable?
+    parser.add_argument("--backbone", type=str) # Use string and cast to callable?
     parser.add_argument("--img_size", type=int, default=512)
     parser.add_argument("--num_classes", type=int, default=2)
     parser.add_argument("--learning_rate", type=float, default=0.001)
@@ -222,9 +227,7 @@ if __name__ == "__main__":
     parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=5)
+    
     args = parser.parse_args()
 
-    with open(args.config) as file:
-        params = yaml.load(file, Loader=yaml.FullLoader)
-
-    train(params)
+    train(args)
