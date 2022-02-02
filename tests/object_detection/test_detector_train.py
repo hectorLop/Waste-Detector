@@ -25,10 +25,10 @@ def test_model_creation():
     """
     Test the model creation
     """
-    model = Config.MODEL_TYPE.model(
-        backbone=Config.BACKBONE(pretrained=False),
-        num_classes=Config.NUM_CLASSES,
-        **Config.EXTRA_ARGS
+    model = Config.model_type.model(
+        backbone=Config.backbone(pretrained=False),
+        num_classes=Config.num_classes,
+        **Config.extra_args
     )
 
     metrics = [COCOMetric(metric_type=COCOMetricType.bbox)]
@@ -45,10 +45,10 @@ def test_train_epoch():
                                           indices=INDICES,
                                           config=Config)
 
-    model = Config.MODEL_TYPE.model(
-        backbone=Config.BACKBONE(pretrained=False),
-        num_classes=Config.NUM_CLASSES,
-        **Config.EXTRA_ARGS
+    model = Config.model_type.model(
+        backbone=Config.backbone(pretrained=False),
+        num_classes=Config.num_classes,
+        **Config.extra_args
     )
     lightning_model = EfficientDetModel(model=model)
 

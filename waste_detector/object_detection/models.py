@@ -18,8 +18,8 @@ class EfficientDetModel(ModelAdapter):
     """
     
     def configure_optimizers(self):
-        return SGD(self.parameters(), lr=Config.LEARNING_RATE,
-                   momentum=Config.MOMENTUM)
+        return SGD(self.parameters(), lr=Config.learning_rate,
+                   momentum=Config.momentum)
 
     
 class MetricsCallback(Callback):
