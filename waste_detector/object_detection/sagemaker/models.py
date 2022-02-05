@@ -1,11 +1,9 @@
 from icevision.models.ross.efficientdet.lightning import ModelAdapter
-from torch.optim import SGD
 from icevision.imports import *
 from icevision.utils import *
 from icevision.core import *
 from icevision.data import *
 from icevision.models.inference import *
-from waste_detector.object_detection.config import Config
 from pytorch_lightning.callbacks import Callback
 
 class EfficientDetModel(ModelAdapter):

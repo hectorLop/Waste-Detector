@@ -1,14 +1,12 @@
 {
-    "Hyperparameters": {
-        "seed": 2022,
-        "model_type": "icevision.models.ross.efficientdet",
-        "backbone": "icevision.models.ross.efficientdet.backbones.d1",
-        "img_size": 512,
-        "num_classes": 2,
-        "learning_rate": 0.001,
-        "weight_decay": 0.000001,
-        "momentum": 0.9,
-        "batch_size": 8,
-        "epochs": 10
-    }
+    "seed": 2022,
+    "model_type": "icevision.models.ross.efficientdet",
+    "backbone": "icevision.models.ross.efficientdet.backbones.d1",
+    "img_size": 512,
+    "num_classes": 2,
+    "learning_rate": 0.001,
+    "weight_decay": 0.000001,
+    "momentum": 0.9,
+    "batch_size": 8,
+    "epochs": 10
 }

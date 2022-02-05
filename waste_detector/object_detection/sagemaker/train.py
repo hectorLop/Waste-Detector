@@ -1,6 +1,7 @@
 from typing import Dict, Tuple
 import json
-
+import glob
+import sys
 from wandb_mv.versioner import Versioner 
 
 from icevision.data.dataset import Dataset
@@ -22,9 +23,7 @@ from utils import (
     get_object_from_str
 )
 
-def get_data_loaders(
-    annotations: str, img_dir: str,  indices : Dict, config
-) -> Tuple[DataLoader]:
+def get_data_loaders(model_type, config) -> Tuple[DataLoader]:
     """
     Get the dataloaders for each set.
 
@@ -40,7 +39,7 @@ def get_data_loaders(
             - (DataLoader): Test dataloader
     """
     # Training, test and validation records
-    train_records, val_records = get_splits(annotations, img_dir, indices)
+    train_records, val_records = get_splits()
     # Training, validation and test transforms
     train_tfms, valid_tfms, _ = get_transforms(config)
 
@@ -49,41 +48,37 @@ def get_data_loaders(
     valid_ds = Dataset(val_records, valid_tfms)
 
     # Data Loaders
-    train_dl = config.model_type.train_dl(
-        train_ds, batch_size=config.batch_size, num_workers=4, shuffle=True
+    train_dl = model_type.train_dl(
+        train_ds, batch_size=int(config['batch_size']), num_workers=4, shuffle=True
     )
-    valid_dl = config.model_type.valid_dl(
-        valid_ds, batch_size=config.batch_size, num_workers=4, shuffle=False
+    valid_dl = model_type.valid_dl(
+        valid_ds, batch_size=int(config['batch_size']), num_workers=4, shuffle=False
     )
 
     return train_dl, valid_dl
 
-def train(parameters: Dict) -> None:
+def train(config: Dict) -> None:
     """
     Trains a waste detector model.
 
     Args:
         parameters (Dict): Dictionary containing training parameters.
     """
-    config = parameters
-    fix_all_seeds(config.seed)
+    fix_all_seeds(int(config['seed']))
     
-    config.model_type = get_object_from_str(config.model_type)
-    config.backbone = get_object_from_str(config.backbone)
+    model_type = get_object_from_str(config['model_type'])
+    backbone = get_object_from_str(config['backbone'])
 
-    train_dl, valid_dl = get_data_loaders(
-        config.annotations, config.img_dir, config.indices, config
-    )
+    train_dl, valid_dl = get_data_loaders(model_type, config)
 
     extra_args = {
-        'img_size': config.img_size
+        'img_size': int(config['img_size'])
     }
     
-
     print("Getting the model")
-    model = config.model_type.model(
-        backbone=config.backbone(pretrained=True),
-        num_classes=config.num_classes,
+    model = model_type.model(
+        backbone=backbone(pretrained=True),
+        num_classes=int(config['num_classes']),
         **extra_args
     )
 
@@ -92,20 +87,20 @@ def train(parameters: Dict) -> None:
     wandb_logger = WandbLogger(project="waste_detector",
                                entity="hlopez",
                                config={
-                                   "learning_rate": config.learning_rate,
-                                   "weight_decay": config.weight_decay,
-                                   "momentum": config.momentum,
-                                   "batch_size": config.batch_size,
-                                   "total_epochs": config.epochs,
-                                   "img_size": config.img_size,
+                                   "learning_rate": float(config['learning_rate']),
+                                   "weight_decay": float(config['weight_decay']),
+                                   "momentum": float(config['momentum']),
+                                   "batch_size": int(config['batch_size']),
+                                   "total_epochs": int(config['epochs']),
+                                   "img_size": int(config['img_size']),
                                })
 
     versioner = Versioner(wandb_logger.experiment)
-    latest_version = versioner.get_latest_version('detector', wandb_logger.experiment)
+    latest_version = versioner.get_latest_version('detector')
     new_version = int(latest_version) + 1
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath=config.checkpoint_path,
+        dirpath='/opt/ml/model/',
         filename=f'sagemaker_model_v{new_version}',
         save_top_k=1,
         verbose=True,
@@ -115,23 +110,20 @@ def train(parameters: Dict) -> None:
     
     metrics_callback = MetricsCallback()
 #     torch.set_default_tensor_type(torch.cuda.FloatTensor)
-    lightning_model = EfficientDetModel(model=model, optimzier=torch.nn.optim.SGD,
-                                        learning_rate=config.learning_rate,
+    lightning_model = EfficientDetModel(model=model, optimizer=torch.optim.SGD,
+                                        learning_rate=float(config['learning_rate']),
                                         metrics=metrics)
     
     print("TRAINING")
     for param in lightning_model.model.parameters():
         param.requires_grad = True
         
-        
-    trainer = Trainer(max_epochs=config.epochs, gpus=1,
+    trainer = Trainer(max_epochs=int(config['epochs']), gpus=1,
                       callbacks=[checkpoint_callback, metrics_callback], logger=wandb_logger)
     trainer.fit(lightning_model, train_dl, valid_dl)
     
     metrics = get_metrics(trainer, MetricsCallback)
     best_metric = get_best_metric(metrics)
-    
-    
     
     artifact = versioner.create_artifact(
                                 checkpoint=f'/opt/ml/model/sagemaker_model_v{new_version}.ckpt',
@@ -141,8 +133,8 @@ def train(parameters: Dict) -> None:
                                 metadata={
                                     'val_metric': best_metric,
                                     'test_metric': 0.0,
-                                    'model_type': str(config.model_type).split("'")[1],
-                                    'backbone': config.backbone.model_name,
+                                    'model_type': config['model_type'],
+                                    'backbone': config['backbone'],
                                     'extra_args': extra_args,
                                 }
                 )
@@ -179,8 +171,9 @@ if __name__ == "__main__":
     # parser.add_argument("--epochs", type=int, default=5)
     
     # args = parser.parse_args()
-
-    with open('/opt/ml/input/config/hyperparameters.json') as json_file:
+    print(glob.glob('/opt/ml/input/training/data/*'))
+    with open('/opt/ml/input/config/hyperparameters.json', 'r') as json_file:
         hyperparameters = json.load(json_file)
 
     train(hyperparameters)
+    sys.exit(0)

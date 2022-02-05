@@ -11,7 +11,6 @@ from icevision.data.data_splitter import RandomSplitter, FixedSplitter
 from icevision.data.record_collection import RecordCollection
 from icevision.parsers.coco_parser import COCOBBoxParser
 
-from waste_detector.object_detection.config import Config
 
 def get_object_from_str(s):
     """Get object from formatted string (loadable function or class)
@@ -45,9 +44,7 @@ def fix_all_seeds(seed: int = 4496) -> None:
         torch.backends.cudnn.deterministic = True
 
 
-def get_splits(
-    annotations: str, img_dir: str, indices, config: Config = Config
-) -> Tuple[RecordCollection]:
+def get_splits() -> Tuple[RecordCollection]:
     """
     Split the data given the annotations in COCO format.
 
@@ -62,18 +59,18 @@ def get_splits(
             - (RecordCollection): Testing record
             - (RecordCollection): Validation record
     """
-    with open('/opt/ml/data/training/data/indices.json', 'r') as file:
+    with open('/opt/ml/input/data/training/data/indices.json', 'r') as file:
         indices_dict = json.load(file)
     
-    parser = COCOBBoxParser(annotations_filepath='/opt/ml/data/training/data/mixed_annotations.json',
-                            img_dir='/opt/ml/data/training/data/')
+    parser = COCOBBoxParser(annotations_filepath='/opt/ml/input/data/training/data/mixed_annotations.json',
+                            img_dir='/opt/ml/input/data/training/')
     splitter = FixedSplitter(splits=[indices_dict['train'], indices_dict['val']])
 
     train, val = parser.parse(data_splitter=splitter, autofix=True)
 
     return train, val
 
-def get_transforms(config: Config) -> Tuple[tfms.A.Adapter]:
+def get_transforms(config) -> Tuple[tfms.A.Adapter]:
     """
     Get the transformations for each set.
 
@@ -86,24 +83,26 @@ def get_transforms(config: Config) -> Tuple[tfms.A.Adapter]:
             - (tfms.A.Adapter): Validation transforms
             - (tfms.A.Adapter): Testing transforms
     """
+    img_size = int(config['img_size'])
+
     train_tfms = tfms.A.Adapter(
         [
             #*tfms.A.aug_tfms(size=config.IMG_SIZE, presize=config.PRESIZE),
-            tfms.A.Resize(config.img_size, config.img_size),
+            tfms.A.Resize(img_size, img_size),
             tfms.A.Normalize(),
         ]
     )
 
     valid_tfms = tfms.A.Adapter(
         [#*tfms.A.resize_and_pad(config.IMG_SIZE), 
-             tfms.A.Resize(config.img_size, config.img_size),
+             tfms.A.Resize(img_size, img_size),
              tfms.A.Normalize()
         ]
     )
 
     test_tfms = tfms.A.Adapter(
         [#*tfms.A.resize_and_pad(config.IMG_SIZE), 
-             tfms.A.Resize(config.img_size, config.img_size),
+             tfms.A.Resize(img_size, img_size),
              tfms.A.Normalize()
         ]
     )
