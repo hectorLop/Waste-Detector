@@ -7,8 +7,7 @@ import torch
 import torchvision
 from torch.utils.data import Dataset
 
-from waste_detector.classifier.config import Config
-from waste_detector.classifier.utils import crop_img_to_bbox, read_img
+from utils import crop_img_to_bbox, read_img
 
 
 class CustomNormalization(A.ImageOnlyTransform):
@@ -30,7 +29,7 @@ def get_transforms(config, augment: bool = False) -> List[Callable]:
         List[Callable]: list containing the tranformations
     """
     transforms = [
-        A.Resize(height=config.img_size, width=config.img_size,
+        A.Resize(height=int(config['img_size']), width=int(config['img_size']),
                  interpolation=cv2.INTER_NEAREST),
         CustomNormalization(p=1),
     ]

@@ -9,17 +9,16 @@ import numpy as np
 import pandas as pd
 import torch
 import wandb
-import yaml
 from sklearn.metrics import accuracy_score
 from sklearn.utils.class_weight import compute_class_weight
 from torch.utils.data import DataLoader
 
-from waste_detector.classifier.dataset import (
+from dataset import (
     WasteDatasetClassification,
     get_transforms
 )
-from waste_detector.classifier.model import CustomEfficientNet
-from waste_detector.classifier.utils import fix_all_seeds
+from model import CustomEfficientNet
+from utils import fix_all_seeds
 
 def train_step(
     model : torch.nn.Module,
@@ -36,15 +35,15 @@ def train_step(
 
     for batch_idx, (images, labels) in enumerate(train_loader, 1):
         # Predict
-        images = images.to(config.device)
-        labels = labels.to(config.device)
+        images = images.to('cuda')
+        labels = labels.to('cuda')
 
         # Set the gradients to zerp before backprop step
         optimizer.zero_grad()
 
         # Get predictions and calculate the loss
         y_preds = model(images.float())
-        y_preds = y_preds.to(config.device)
+        y_preds = y_preds.to('cuda')
 
         loss = criterion(y_preds, labels)
 
@@ -78,11 +77,11 @@ def val_step(
 
     with torch.no_grad():
         for batch_idx, (images, labels) in enumerate(val_loader, 1):
-            images = images.to(config.device)
-            labels = labels.to(config.device)
+            images = images.to('cuda')
+            labels = labels.to('cuda')
 
             y_preds = model(images.float())
-            y_preds = y_preds.to(config.device)
+            y_preds = y_preds.to('cuda')
 
             loss = criterion(y_preds, labels)
 
@@ -105,13 +104,13 @@ def fit(
     filepath : str,
     weights : Optional[np.ndarray]
 ) -> Tuple[torch.nn.Module, List[float], List[float]]:
-    model = model.to(config.device)
+    model = model.to('cuda')
 
     optimizer = torch.optim.SGD(
         model.parameters(),
-        lr=config.learning_rate,
-        momentum=config.momentum,
-        weight_decay=config.weight_decay,
+        lr=float(config['learning_rate']),
+        momentum=float(config['momentum']),
+        weight_decay=float(config['weight_decay']),
     )
 
     if weights is not None:
@@ -126,7 +125,7 @@ def fit(
     val_loss_accum, train_loss_accum = [], []
     train_acc_accum, val_acc_accum = [], []
 
-    for epoch in range(1, config.epochs + 1):
+    for epoch in range(1, int(config['epochs']) + 1):
         train_loss, train_acc = train_step(
             model, train_loader, config, criterion, optimizer
         )
@@ -184,14 +183,14 @@ def get_loaders(
         df_train, get_transforms(config, augment=False), config
     )
     dl_train = DataLoader(
-        ds_train, batch_size=config.batch_size, shuffle=True, num_workers=4
+        ds_train, batch_size=int(config['batch_size']), shuffle=True, num_workers=4
     )
 
     ds_val = WasteDatasetClassification(
         df_val, get_transforms(config, augment=False), config
     )
     dl_val = DataLoader(
-        ds_val, batch_size=config.batch_size, shuffle=True, num_workers=4
+        ds_val, batch_size=int(config['batch_size']), shuffle=True, num_workers=4
     )
     return dl_train, dl_val
 
@@ -199,10 +198,10 @@ def get_loaders(
 def train(config: Dict):
     fix_all_seeds(4089)
 
-    with open('/opt/ml/data/training/data/classification/train_7_class.pkl', "rb") as file:
+    with open('/opt/ml/input/data/training/data/classification/train_7_class.pkl', "rb") as file:
         train_df = pickle.load(file)
 
-    with open('/opt/ml/data/training/data/classification/val_7_class.pkl', "rb") as file:
+    with open('/opt/ml/input/data/training/data/classification/val_7_class.pkl', "rb") as file:
         val_df = pickle.load(file)
 
     train_loader, val_loader = get_loaders(train_df, val_df)
@@ -221,18 +220,18 @@ def train(config: Dict):
         project="waste_classifier",
         entity="hlopez",
         config={
-            "learning_rate": config.learning_rate,
-            "weight_decay": config.weight_decay,
-            "momentum": config.momentum,
-            "batch_size": config.batch_size,
-            "total_epochs": config.epochs,
-            "img_size": config.img_size,
+            "learning_rate": float(config['learning_rate']),
+            "weight_decay": float(config['weight_decay']),
+            "momentum": float(config['momentum']),
+            "batch_size": int(config['batch_size']),
+            "total_epochs": int(config['epochs']),
+            "img_size": int(config['img_size']),
         },
     )
 
     versioner = Versioner(run)
 
-    latest_version = versioner.get_latest_version('classifier', run)
+    latest_version = versioner.get_latest_version('classifier')
     new_version = int(latest_version) + 1
 
     ckpt_name = f'/opt/ml/model/sagemaker_classifier_v{new_version}.ckpt'
@@ -246,8 +245,6 @@ def train(config: Dict):
 
     best_metric_idx = np.argmin(val_loss)
     best_metric = val_acc[best_metric_idx]
-    
-    
     
     artifact = versioner.create_artifact(
                                 checkpoint=ckpt_name,
