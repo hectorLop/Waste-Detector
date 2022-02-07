@@ -1,6 +1,7 @@
 import json
 import gc
 import pickle
+import sys
 from typing import Any, Dict, List, Optional, Tuple, Any
 
 from wandb_mv.versioner import Versioner 
@@ -157,7 +158,7 @@ def fit(
 
         gc.collect()
 
-        prefix = f"[Epoch {epoch:2d} / {config.epochs:2d}]"
+        prefix = f"[Epoch {epoch:2d} / {int(config['epochs']):2d}]"
         print(prefix)
         print(f"{prefix} Train loss: {train_loss:7.5f}. Val loss: {val_loss:7.5f}")
         print(f"{prefix} Train acc: {train_acc:7.5f}. Val acc: {val_acc:7.5f}")
@@ -204,7 +205,7 @@ def train(config: Dict):
     with open('/opt/ml/input/data/training/data/classification/val_7_class.pkl', "rb") as file:
         val_df = pickle.load(file)
 
-    train_loader, val_loader = get_loaders(train_df, val_df)
+    train_loader, val_loader = get_loaders(train_df, val_df, config)
 
     weights = compute_class_weight(
         "balanced",
@@ -270,3 +271,4 @@ if __name__ == "__main__":
         hyperparameters = json.load(json_file)
 
     train(hyperparameters)
+    sys.exit(0)

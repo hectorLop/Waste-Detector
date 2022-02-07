@@ -20,14 +20,14 @@ def train(name : str):
     model = sage.estimator.Estimator(image,
                 role='AWSSagemakerFull-Default',
                 # role=role,
-                instance_count=1, 
+                instance_count=1,
                 instance_type='ml.g4dn.xlarge',
                 hyperparameters=hyperparameters,
                 #  output_path="s3://{}/output".format("slytherins-test"),
                 sagemaker_session=sess)
 
     data_channels = {
-        'training': data_location 
+        'training': data_location
     }
 
     model.fit(data_channels, job_name=name)

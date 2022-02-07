@@ -8,15 +8,15 @@ RUN pip install --upgrade requests
 # install the SageMaker Training Toolkit 
 RUN pip install sagemaker-training
 
-RUN pip3 install torchvision && \
+RUN pip install torch && \
+    pip install torchvision && \
     pip install albumentations && \
     pip install timm && \
     pip install wandb && \
     pip install pandas && \
     pip install wandb-mv && \
     pip install scikit-learn && \
-    pip install Pillow && \
-    pip install torch
+    pip install Pillow
 
 # TODO: WANDB key
 ENV WANDB_API_KEY b2bc2c802f93f26a488e88e45a9082b59a29d851

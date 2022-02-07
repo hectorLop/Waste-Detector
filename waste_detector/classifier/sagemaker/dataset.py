@@ -64,7 +64,8 @@ class WasteDatasetClassification(Dataset):
         info = self.df.iloc[idx, :]
 
         # Read the image and rotate it if neccesary
-        img = read_img(info["filename"])
+        filename = '/opt/ml/input/data/training/' + info["filename"]
+        img = read_img(filename)
         bbox = torch.as_tensor(info["bbox"])
         bbox = torchvision.ops.box_convert(bbox, "xywh", "xyxy")
         bbox = torchvision.ops.clip_boxes_to_image(bbox, size=(img.shape[:2]))
