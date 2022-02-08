@@ -36,7 +36,7 @@ def train_classifier():
     image = f'{account}.dkr.ecr.{region}.amazonaws.com/classifier_training:latest'
 
 
-    with open('classifier_hyperameters.json', 'r') as file:
+    with open('dags/classifier_hyperparameters.json', 'r') as file:
         hyperparameters = json.load(file)
 
     model = sage.estimator.Estimator(image,
@@ -44,6 +44,7 @@ def train_classifier():
                 instance_count=1,
                 instance_type='ml.g4dn.xlarge',
                 hyperparameters=hyperparameters,
+                base_job_name='classifier-job',
                 sagemaker_session=sess)
 
     data_channels = {
@@ -67,7 +68,7 @@ def train_detector():
     image = f'{account}.dkr.ecr.{region}.amazonaws.com/waste_training:detector_latest'
 
 
-    with open('classifier_hyperameters.json', 'r') as file:
+    with open('dags/detector_hyperparameters.json', 'r') as file:
         hyperparameters = json.load(file)
 
     model = sage.estimator.Estimator(image,
@@ -75,6 +76,7 @@ def train_detector():
                 instance_count=1,
                 instance_type='ml.g4dn.xlarge',
                 hyperparameters=hyperparameters,
+                base_job_name='detector-job',
                 sagemaker_session=sess)
 
     data_channels = {
@@ -91,33 +93,29 @@ classifier_training = train_classifier()
 detector_training = train_detector()
 
 with DAG(
-    dag_id=config.AIRFLOW_DAG_ID,
+    dag_id='training',
+    start_date=days_ago(1),
     default_args=args,
     schedule_interval=None,
     concurrency=1,
     max_active_runs=1,
 ) as dag:
     train_detector = SageMakerTrainingOperator(
-      task_id = "train",
-      config = detector_training,
-      aws_conn_id = "airflow-sagemaker",
-      wait_for_completion = True,
-      check_interval = 60, #check status of the job every minute
-      max_ingestion_time = None, #allow training job to run as long as it needs, change for early stop
+        task_id='detector',
+        config = detector_training,
+        aws_conn_id = "airflow-sagemaker",
+        wait_for_completion = True,
+        check_interval = 60, #check status of the job every minute
+        max_ingestion_time = None #allow training job to run as long as it needs, change for early stop
     )
 
     train_classifier = SageMakerTrainingOperator(
-        task_id='train_classifier',
-        training_config=classifier_training,
+        task_id='classifier',
+        config=classifier_training,
         aws_conn_id='airflow-sagemaker',
         wait_for_completion=True,
         check_interval=60,
         max_ingestion_time=None
     )
 
-    )
-
-train_detector >> train_classifier
-
-
-   
+    train_detector >> train_classifier
