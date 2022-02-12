@@ -70,6 +70,35 @@ def get_splits() -> Tuple[RecordCollection]:
 
     return train, val
 
+def get_test_split() -> Tuple[RecordCollection]:
+    """
+    Split the data given the annotations in COCO format.
+
+    Args:
+        annotations (str): Annotations filepath.
+        img_dir (str): Images filepath.
+        config (Config): Config object
+
+    Returns:
+        Tuple[RecordCollection]: Tuple containing:
+            - (RecordCollection): Training record
+            - (RecordCollection): Testing record
+            - (RecordCollection): Validation record
+    """
+    with open('/opt/ml/input/data/testing/data/indices.json', 'r') as file:
+        indices_dict = json.load(file)
+    
+    parser = COCOBBoxParser(annotations_filepath='/opt/ml/input/data/testing/data/mixed_annotations.json',
+                            img_dir='/opt/ml/input/data/testing/')
+
+    # Is needed to past two indices. Otherwise the parse method returns a RecordCollection
+    # and it will throw an error in training
+    splitter = FixedSplitter(splits=[indices_dict['val'], indices_dict['test']])
+
+    _, test = parser.parse(data_splitter=splitter, autofix=True)
+
+    return test
+
 def get_transforms(config) -> Tuple[tfms.A.Adapter]:
     """
     Get the transformations for each set.

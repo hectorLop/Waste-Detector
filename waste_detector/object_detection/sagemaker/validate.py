@@ -1,5 +1,6 @@
 import argparse
 from typing import Dict, Tuple
+import json
 
 import torch
 import icevision
@@ -21,15 +22,14 @@ from torch.utils.data import DataLoader
 from models import EfficientDetModel, MetricsCallback
 from utils import (
     fix_all_seeds,
+    get_object_from_str,
     get_test_split,
     get_transforms,
     get_metrics,
     get_best_metric
 )
 
-def get_data_loaders(
-    annotations: str, img_dir: str,  indices : Dict, config: Config = Config
-) -> Tuple[DataLoader]:
+def get_data_loaders(model_type, config) -> Tuple[DataLoader]:
     """
     Get the dataloaders for each set.
 
@@ -45,7 +45,7 @@ def get_data_loaders(
             - (DataLoader): Test dataloader
     """
     # Training, test and validation records
-    test_records = get_test_split(annotations, img_dir, indices)
+    test_records = get_test_split()
     # Training, validation and test transforms
     _, _, test_tfms = get_transforms(config)
 
@@ -54,7 +54,7 @@ def get_data_loaders(
 
     # Data Loaders
     test_dl = model_type.valid_dl(
-        test_ds, batch_size=config.BATCH_SIZE, num_workers=4, shuffle=False
+        test_ds, batch_size=int(config['batch_size']), num_workers=4, shuffle=False
     )
 
     return test_dl
@@ -90,7 +90,7 @@ def validate(config : Dict) -> None:
     run = wandb.init(project="waste_detector", entity="hlopez",)
 
     best_model_art = run.use_artifact('detector:best_model')
-    model_path = best_model_art.download('models/')
+    model_path = best_model_art.download('/opt/ml/model/')
     model_ckpt = glob.glob(f'{model_path}*')[0]
 
     checkpoint_and_model = model_from_checkpoint(
@@ -107,9 +107,11 @@ def validate(config : Dict) -> None:
     model.eval()
 
     metrics_callback = MetricsCallback()
-    lightning_model = EfficientDetModel(model=model, metrics=metrics)
+    lightning_model = EfficientDetModel(model=model, optimizer=torch.optim.SGD,
+                                        learning_rate=float(config['learning_rate']),
+                                        metrics=metrics)
         
-    trainer = Trainer(max_epochs=int(config['epochs']), gpus=1,
+    trainer = Trainer(max_epochs=int(config['epochs']), gpus=0,
                       callbacks=[metrics_callback])
 
     trainer.validate(lightning_model, test_dl)

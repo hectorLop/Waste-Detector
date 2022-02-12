@@ -98,6 +98,8 @@ def train(config: Dict) -> None:
     versioner = Versioner(wandb_logger.experiment)
     latest_version = versioner.get_latest_version('detector')
     new_version = int(latest_version) + 1
+    print(latest_version, new_version)
+    print(f'NEW FILENAME: sagemaker_model_v{new_version}')
 
     checkpoint_callback = ModelCheckpoint(
         dirpath='/opt/ml/model/',
