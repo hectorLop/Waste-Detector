@@ -4,9 +4,10 @@ import numpy as np
 import cv2
 import torch
 import wandb
+import glob
 
 from icevision.models.checkpoint import model_from_checkpoint
-from classifier import CustomViT
+from deployment.classifier import CustomEfficientNet 
 
 def waste_detector_interface(
     image,
@@ -86,14 +87,13 @@ def get_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
     detector_run = wandb.init(project="waste_detector", entity="hlopez",)
 
     best_model_art = detector_run.use_artifact('detector:production')
-    model_path = best_model_art.download('')
-    detector_ckpt = glob.glob(f'{model_path}*')[0]
-
+    model_path = best_model_art.download('checkpoints/')
+    detector_ckpt = f'checkpoints/efficientDet_icevision_v9.ckpt'
     print('Loading the detection model')
     checkpoint_and_model = model_from_checkpoint(
-                                detector_ckpt,
+                                detector_ckpt, 
                                 model_name='ross.efficientdet',
-                                backbone_name='d0',
+                                backbone_name='d1',
                                 img_size=512,
                                 classes=['Waste'],
                                 revise_keys=[(r'^model\.', '')],
@@ -101,15 +101,16 @@ def get_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
 
     det_model = checkpoint_and_model['model']
     det_model.eval()
-
-    classifier_run = wandb.init(project="waste_detector", entity="hlopez",)
+    
+    print('Loading the classifier model')
+    wandb.finish()
+    classifier_run = wandb.init(project="waste_classifier", entity="hlopez",)
 
     best_model_art = classifier_run.use_artifact('classifier:production')
-    model_path = best_model_art.download('')
-    classifier_ckpt = glob.glob(f'{model_path}*')[0]
+    model_path = best_model_art.download('checkpoints/')
+    classifier_ckpt = 'checkpoints/class_efficientB0_taco_7_class_v1.pth' 
 
-    print('Loading the classifier model')
-    classifier = CustomViT(target_size=7, pretrained=False)
+    classifier = CustomEfficientNet(target_size=7, pretrained=False)
     classifier.load_state_dict(torch.load(classifier_ckpt, map_location='cpu'))
     classifier.eval()
 

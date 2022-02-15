@@ -3,13 +3,10 @@ from gradio.networking import get_first_available_port
 import PIL
 import torch
 import os
-
-from utils import plot_img_no_mask, get_models
-from classifier import CustomEfficientNet, CustomViT
-from model import get_model, predict, prepare_prediction, predict_class
-
-DET_CKPT = 'efficientDet_icevision.ckpt'
-CLASS_CKPT = 'class_ViT_taco_7_class.pth'
+import io
+import requests
+import base64
+import json
 
 def waste_detector_interface(
     image,
@@ -18,7 +15,26 @@ def waste_detector_interface(
 ): 
     # TODO: This function send a request to the backend and
     #       receive a response
-    pass
+    buf = io.BytesIO()
+    image.save(buf, format='PNG')
+    image = buf.getvalue()
+    image = base64.b64encode(image).decode('utf8')
+    headers = {
+        'Content-type': 'application/json',
+        'Accept': 'text/plain'
+    }
+    payload = json.dumps({
+        'image': image,
+        'nms_threshold': nms_threshold,
+        'detection_threshold': detection_threshold
+    })
+    response = requests.post(
+        'http://localhost:5000/predict',
+        data=payload,
+        headers=headers
+    ).json()
+
+    print(response)
 
 inputs = [
     gr.inputs.Image(type="pil", label="Original Image"),
@@ -51,4 +67,4 @@ gr.Interface(
     theme="huggingface"
 ).launch(share=True)
 
-os.system('python3 app.py')
+#os.system('python3 app.py')

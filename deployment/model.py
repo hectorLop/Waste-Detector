@@ -2,7 +2,7 @@ from io import BytesIO
 from typing import Dict, Tuple, Union
 from icevision import *
 from icevision.models.checkpoint import model_from_checkpoint
-from classifier import transform_image
+from deployment.classifier import transform_image
 from icevision.models import ross
 
 import PIL
@@ -12,7 +12,7 @@ import torchvision
 
 MODEL_TYPE = ross.efficientdet
 
-def predict(det_model : torch.nn.Module, image : Union[str, BytesIO],
+def predict_boxes(det_model : torch.nn.Module, image : Union[str, BytesIO],
             detection_threshold : float) -> Dict:
     """
     Make a prediction with the detection model.
@@ -27,8 +27,6 @@ def predict(det_model : torch.nn.Module, image : Union[str, BytesIO],
     Returns:
         Dict: Prediction dictionary.
     """        
-    img = PIL.Image.open(image)
-
     # Class map and transforms
     class_map = ClassMap(classes=['Waste'])
     transforms = tfms.A.Adapter([
@@ -37,7 +35,7 @@ def predict(det_model : torch.nn.Module, image : Union[str, BytesIO],
                 ])
     
     # Single prediction
-    pred_dict  = MODEL_TYPE.end2end_detect(img,
+    pred_dict  = MODEL_TYPE.end2end_detect(image,
                                            transforms, 
                                            det_model,
                                            class_map=class_map,
