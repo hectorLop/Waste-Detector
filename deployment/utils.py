@@ -5,71 +5,26 @@ import cv2
 import torch
 import wandb
 import glob
+import io
+import base64
+import PIL
 
 from icevision.models.checkpoint import model_from_checkpoint
 from deployment.classifier import CustomEfficientNet 
 
-def waste_detector_interface(
-    image,
-    detection_threshold,
-    nms_threshold
-):  
-    det_model, classifier = get_models(DET_CKPT, CLASS_CKPT)
-    print('Getting predictions')
-    pred_dict = predict(det_model, image, detection_threshold)
-    print('Fixing the preds')
-    boxes, image = prepare_prediction(pred_dict, nms_threshold)
+def encode(image):
+    buf = io.BytesIO()
+    image.save(buf, format='PNG')
+    image = buf.getvalue()
+    image = base64.b64encode(image).decode('utf8')
 
-    print('Predicting classes')
-    labels = predict_class(classifier, image, boxes)
-    print('Plotting')
+    return image
 
-    return plot_img_no_mask(image, boxes, labels)
+def decode(encoded_image):
+    img_bytes = base64.b64decode(encoded_image.encode('utf-8'))
+    image = PIL.Image.open(io.BytesIO(img_bytes))
 
-
-
-def plot_img_no_mask(image : np.ndarray, boxes : torch.Tensor, labels):
-    colors = {
-        0: (255,255,0),
-        1: (255, 0, 0),
-        2: (0, 0, 255),
-        3: (0,128,0),
-        4: (255,165,0),
-        5: (230,230,250),
-        6: (192,192,192)
-    }
-
-    texts = {
-        0: 'plastic',
-        1: 'dangerous',
-        2: 'carton',
-        3: 'glass',
-        4: 'organic',
-        5: 'rest',
-        6: 'other'
-    }
-
-    # Show image
-    boxes = boxes.cpu().detach().numpy().astype(np.int32)
-    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-
-    for i, box in enumerate(boxes):
-        color = colors[labels[i]]
-
-        [x1, y1, x2, y2] = np.array(box).astype(int)
-        # Si no se hace la copia da error en cv2.rectangle
-        image = np.array(image).copy()
-
-        pt1 = (x1, y1)
-        pt2 = (x2, y2)
-        cv2.rectangle(image, pt1, pt2, color, thickness=5)
-        cv2.putText(image, texts[labels[i]], (x1, y1-10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 4, thickness=5, color=color)
-
-    plt.axis('off')
-    ax.imshow(image)
-
-    fig.savefig("img.png", bbox_inches='tight')
+    return image
 
 def get_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
     """
