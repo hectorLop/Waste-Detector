@@ -1,5 +1,4 @@
 import gradio as gr
-from gradio.networking import get_first_available_port
 import PIL
 import torch
 import os
@@ -8,6 +7,8 @@ import requests
 import base64
 import json
 import numpy as np
+import matplotlib.pyplot as plt
+import cv2
 
 from deployment.utils import encode, decode
 
@@ -74,7 +75,7 @@ def waste_detector_interface(
         'detection_threshold': detection_threshold
     })
     response = requests.post(
-        'http://localhost:5000/predict',
+        'http://backend:5000/predict',
         data=payload,
         headers=headers
     ).json()
@@ -83,35 +84,39 @@ def waste_detector_interface(
 
     return plot_img_no_mask(image, response['boxes'], response['labels'])
 
-inputs = [
-    gr.inputs.Image(type="pil", label="Original Image"),
-    gr.inputs.Number(default=0.5, label="detection_threshold"),
-    gr.inputs.Number(default=0.5, label="nms_threshold"),
-]
+def main():
+    inputs = [
+        gr.inputs.Image(type="pil", label="Original Image"),
+        gr.inputs.Number(default=0.5, label="detection_threshold"),
+        gr.inputs.Number(default=0.5, label="nms_threshold"),
+    ]
 
-outputs = [
-    gr.outputs.Image(type="plot", label="Prediction"),
-]
+    outputs = [
+        gr.outputs.Image(type="plot", label="Prediction"),
+    ]
 
-title = 'Waste Detection'
-description = 'Demo for waste object detection. It detects and classify waste in images according to which rubbish bin the waste should be thrown. Upload an image or click an image to use.'
-examples = [
-    ['deployment/example_imgs/basura_4_2.jpg', 0.5, 0.5],
-    ['deployment/example_imgs/basura_1.jpg', 0.5, 0.5],
-    ['deployment/example_imgs/basura_3.jpg', 0.5, 0.5]
-]
+    title = 'Waste Detection'
+    description = 'Demo for waste object detection. It detects and classify waste in images according to which rubbish bin the waste should be thrown. Upload an image or click an image to use.'
+    examples = [
+        ['deployment/example_imgs/basura_4_2.jpg', 0.5, 0.5],
+        ['deployment/example_imgs/basura_1.jpg', 0.5, 0.5],
+        ['deployment/example_imgs/basura_3.jpg', 0.5, 0.5]
+    ]
 
-gr.close_all()
-#port = get_first_available_port(7682, 9000)
+    print('AAA')
+    #port = get_first_available_port(7682, 9000)
 
-gr.Interface(
-    waste_detector_interface,
-    inputs,
-    outputs,
-    title=title,
-    description=description,
-    examples=examples,
-    theme="huggingface"
-).launch(share=True)
+    gr.Interface(
+        waste_detector_interface,
+        inputs,
+        outputs,
+        title=title,
+        description=description,
+        examples=examples,
+        theme="huggingface"
+    ).launch(server_port=8501, server_name="0.0.0.0")
+
+if __name__ == '__main__':
+    main()
 
 #os.system('python3 app.py')
