@@ -22,4 +22,8 @@ ENV WANDB_API_KEY b2bc2c802f93f26a488e88e45a9082b59a29d851
 COPY frontend.py /deployment/frontend.py
 COPY utils.py /deployment/utils.py
 
+EXPOSE 8501
+
 COPY example_imgs/ /deployment/example_imgs/
+
+ENTRYPOINT ["python3","-m", "deployment.frontend"]

@@ -27,4 +27,8 @@ COPY model.py /deployment/model.py
 COPY classifier.py /deployment/classifier.py
 COPY example_imgs/* /deployment/example_imgs/
 
+EXPOSE 5000
+
 RUN mkdir /deployment/checkpoints
+
+ENTRYPOINT ["python3", "-m", "uvicorn", "deployment.backend:app", "--host", "0.0.0.0", "--port", "5000"]

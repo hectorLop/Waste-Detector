@@ -146,4 +146,6 @@ def get_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
     classifier.load_state_dict(torch.load(classifier_ckpt, map_location='cpu'))
     classifier.eval()
 
+    wandb.finish()
+
     return det_model, classifier
