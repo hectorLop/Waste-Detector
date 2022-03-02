@@ -75,7 +75,7 @@ def waste_detector_interface(
         'detection_threshold': detection_threshold
     })
     response = requests.post(
-        'http://backend:5000/predict',
+        'http://localhost:5000/predict',
         data=payload,
         headers=headers
     ).json()
