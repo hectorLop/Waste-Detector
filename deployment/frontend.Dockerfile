@@ -26,4 +26,4 @@ EXPOSE 8501
 
 COPY example_imgs/ /deployment/example_imgs/
 
-#ENTRYPOINT ["python3","-m", "deployment.frontend"]
+ENTRYPOINT ["python3","-m", "deployment.frontend"]

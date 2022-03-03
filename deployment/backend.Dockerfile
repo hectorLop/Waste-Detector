@@ -31,4 +31,4 @@ EXPOSE 5000
 
 RUN mkdir /deployment/checkpoints
 
-#ENTRYPOINT ["python3", "-m", "uvicorn", "deployment.backend:app", "--host", "0.0.0.0", "--port", "5000"]
+ENTRYPOINT ["python3", "-m", "uvicorn", "deployment.backend:app", "--host", "0.0.0.0", "--port", "5000"]
