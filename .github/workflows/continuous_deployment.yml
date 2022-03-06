@@ -47,9 +47,9 @@ jobs:
            echo "::set-output name=frontend-image::$ECR_REGISTRY/$FRONTEND_REPOSITORY"
            echo "::set-output name=backend-image::$ECR_REGISTRY/$BACKEND_REPOSITORY"
 
-      - name: Download task definition
-        run: |
-          aws ecs describe-task-definition --task-definition WasteDetector --query taskDefinition > task-definition.json
+           #- name: Download task definition
+           #  run: |
+           #    aws ecs describe-task-definition --task-definition WasteDetector --query taskDefinition > task-definition.json
 
           #- name: Render task definition for frontend
           #  id: render-frontend
@@ -68,26 +68,28 @@ jobs:
           #    container-name: backend
           #    image: $${{ steps.build-image.outputs.backend-image }}
 
-      - name: Deploy to Amazon ECS service
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          #task-definition: ${{ steps.render-backend.outputs.task-definition }}
-          service: WasteDetector 
-          cluster: WasteDetectorCluster
-          wait-for-service-stability: true
+          #- name: Deploy to Amazon ECS service
+          #  uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+          #  with:
+          #    task-definition: task-definition.json
+          #    #task-definition: ${{ steps.render-backend.outputs.task-definition }}
+          #    service: WasteDetector 
+          #    cluster: WasteDetectorCluster
+          #    wait-for-service-stability: true
 
-         #- name: Deploy on ECSk
-         #  env:
-         #    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-         #    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-         #    AWS_REGION: ${{ secrets.AWS_REGION }}
-         #  run: |
-         #    sudo curl -Lo /usr/local/bin/ecs-cli https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
-         #    sudo chmod +x /usr/local/bin/ecs-cli 
-         #    cd deployment
-         #    #aws ecs describe-clusters --cluster WasteDetectorCluster
-         #    ecs-cli compose --project-name WasteDetector service up --create-log-groups --cluster-config WasteDetectorCluster
+      - name: Deploy on ECS
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          sudo curl -Lo /usr/local/bin/ecs-cli https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
+          sudo chmod +x /usr/local/bin/ecs-cli 
+          ecs-cli configure profile --profile-name deployer --access-key $AWS_ACCESS_KEY_ID --secret-key $AWS_SECRET_ACCESS_KEY
+          ecs-cli configure --cluster WasteDetectorCluster --default-launch-type FARGATE --config-name WasteDetectorCluster --region $AWS_REGION
+          cd deployment
+          #echo $(aws ecs describe-clusters --cluster WasteDetectorCluster)
+          ecs-cli compose --project-name WasteDetector service up --create-log-groups --cluster-config WasteDetectorCluster
 
           #- name: Deploy Amazon ECS task definition
           #  uses: aws-actions/amazon-ecs-deploy-task-definition@v1
