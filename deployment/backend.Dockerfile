@@ -1,5 +1,6 @@
 FROM ubuntu:20.04
 
+#RUN apt-get install -y libpq-dev python-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libffi-dev
 # Install dependencies
 RUN apt-get update && \
     apt-get install -y python3-pip && \
@@ -12,7 +13,7 @@ RUN pip install icevision[all] && \
     pip install pandas && \
     pip install effdet && \
     pip install wandb-mv && \
-    pip install mmcv-full && \
+    pip install mmcv-full==1.3.17 && \
     pip install Pillow && \
     pip install fastapi && \
     pip install "uvicorn[standard]"
@@ -31,4 +32,4 @@ EXPOSE 5000
 
 RUN mkdir /deployment/checkpoints
 
-ENTRYPOINT ["python3", "-m", "uvicorn", "deployment.backend:app", "--host", "0.0.0.0", "--port", "5000"]
+#ENTRYPOINT ["python3", "-m", "uvicorn", "deployment.backend:app", "--host", "0.0.0.0", "--port", "5000"]

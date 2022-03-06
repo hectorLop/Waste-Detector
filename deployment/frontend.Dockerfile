@@ -1,5 +1,7 @@
 FROM ubuntu:20.04
 
+#RUN apt-get install -y libpq-dev python-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libffi-dev
+
 # Install dependencies
 RUN apt-get update && \
     apt-get install -y python3-pip && \
@@ -26,4 +28,4 @@ EXPOSE 8501
 
 COPY example_imgs/ /deployment/example_imgs/
 
-ENTRYPOINT ["python3","-m", "deployment.frontend"]
+#ENTRYPOINT ["python3","-m", "deployment.frontend"]
