@@ -13,11 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install aws-cli
-        id: install-aws-cli
-        uses: unfor19/install-aws-cli-action@v1
-        with:
-          version: 2
+        #- name: Install aws-cli
+        #  id: install-aws-cli
+        #  uses: unfor19/install-aws-cli-action@v1
+        #  with:
+        #    version: 2
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
