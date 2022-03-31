@@ -69,16 +69,23 @@ def waste_detector_interface(
         'Content-type': 'application/json',
         'Accept': 'text/plain'
     }
-    payload = json.dumps({
-        'image': image,
-        'nms_threshold': nms_threshold,
-        'detection_threshold': detection_threshold
+    payload = json.dumps(
+    {
+        'body': {
+            'image': image,
+            'nms_threshold': nms_threshold,
+            'detection_threshold': detection_threshold
+        }
     })
     response = requests.post(
-        'http://localhost:5000/predict',
+        'http://localhost:9000/2015-03-31/functions/function/invocations',
         data=payload,
         headers=headers
     ).json()
+
+    print(response)
+
+    response = json.load(response['body'])
 
     image = decode(response['image'])
 

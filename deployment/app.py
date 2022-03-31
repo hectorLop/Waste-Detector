@@ -1,7 +1,16 @@
 import sys
 import icevision
 import wandb
+import torch
+
+from typing import Tuple
+from utils import encode, decode
+
+from utils import encode, decode
+from classifier import CustomEfficientNet, CustomViT
+from model import predict_boxes, prepare_prediction, predict_class
 from icevision.models.checkpoint import model_from_checkpoint
+
 
 def get_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
     """
@@ -50,5 +59,47 @@ def get_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
 
     return det_model, classifier
 
+def format_response(body, status_code):
+    return {
+        'statusCode': str(status_code),
+        'body': json.dumps(body),
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+            }
+        }
+
 def handler(event, context):
-    return f'Hello from AWS Lambda using Python {sys.version} and Icevision {icevision.__version__}'
+    try:
+        body = json.loads(event['body'])
+        image = decode(body['image'])
+
+        detection_threshold = float(body['detection_threshold'])
+        nms_threshold = float(body['nms_threshold'])
+
+        print('Predicting bounding boxes')
+        pred_dict = predict_boxes(detector, image, detection_threshold)
+
+        print('Fixing the preds')
+        boxes, image = prepare_prediction(pred_dict, nms_threshold)
+
+        print('Predicting classes')
+        labels = predict_class(classifier, image, boxes)
+
+        image = PIL.Image.fromarray(image)
+        image = encode(image)
+
+        payload = {
+            'image': image,
+            'boxes': boxes.tolist(),
+            'labels': labels.tolist()
+        }
+
+        return format_response(payload, 200)
+    except:
+        body = {}
+
+        return format_response(body, 200)
+
+#def handler(event, context):
+#    return f'Hello from AWS Lambda using Python {sys.version} and Icevision {icevision.__version__}'
