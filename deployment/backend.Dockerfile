@@ -16,16 +16,18 @@ RUN pip install icevision[all] && \
 ENV WANDB_API_KEY b2bc2c802f93f26a488e88e45a9082b59a29d851
 
 # copy the training script inside the container
-#COPY backend.py /deployment/backend.py
 COPY utils.py ./
 COPY model.py ./
 COPY classifier.py ./
-#COPY example_imgs/* /deployment/example_imgs/
-
+##COPY example_imgs/* /deployment/example_imgs/
+#
 COPY app.py ./ 
-
-#RUN mkdir /deployment/checkpoints
-
+#COPY efficientDet_icevision_v9.ckpt ./model_dir/
+#COPY class_efficientB0_taco_7_class_v1.pth ./model_dir/
+COPY ckpts_download.py ./
+##RUN mkdir /deployment/checkpoints
+RUN bash -c "python ckpts_download.py"
+#CMD [ "python", "ckpts_download.py" ]
 #CMD ["app.get_models"]
 CMD ["app.handler"]
 
