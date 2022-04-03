@@ -9,6 +9,8 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+from tornado.websocket import websocket_connect
+from tornado.ioloop import IOLoop
 
 from deployment.utils import encode, decode
 
@@ -64,28 +66,41 @@ def waste_detector_interface(
     #image.save(buf, format='PNG')
     #image = buf.getvalue()
     #image = base64.b64encode(image).decode('utf8')
-    image = encode(image)
+    #image = encode(image)
+    fd = io.BytesIO()
+    image.save(fd, format='PNG')
+    image = fd.getvalue()
+    image = base64.b64encode(fd.getvalue())
+
     headers = {
-        'Content-type': 'application/json',
-        'Accept': 'text/plain'
+        "Content-type": "application/json",
+        "Accept": "text/plain"
     }
-    payload = json.dumps(
-    {
-        'body': {
-            'image': image,
-            'nms_threshold': nms_threshold,
-            'detection_threshold': detection_threshold
-        }
-    })
+    payload = {
+        "image": image.decode(),
+        "nms_threshold": nms_threshold,
+        "detection_threshold": detection_threshold
+    }
+
+    #payload = {
+    #    'msg': 'PRUEBITA' 
+    #}
+    payload = json.dumps(payload)
+    print(type(payload))
+    print(payload[:20])
+    #print(payload[100:])
+
     response = requests.post(
         'http://localhost:9000/2015-03-31/functions/function/invocations',
+        #'https://lambda.eu-west-1.amazonaws.com/2015-03-31/functions/arn:aws:lambda:eu-west-1:903243951329:function:waste-detector-prediction/invocations',
         data=payload,
         headers=headers
     ).json()
 
     print(response)
 
-    response = json.load(response['body'])
+    response = json.loads(response['body'])
+    print(response)
 
     image = decode(response['image'])
 
@@ -124,6 +139,7 @@ def main():
     ).launch(server_port=8501, server_name="0.0.0.0")
 
 if __name__ == '__main__':
+    gr.close_all()
     main()
 
 #os.system('python3 app.py')
