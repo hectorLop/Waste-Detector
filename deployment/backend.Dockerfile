@@ -4,9 +4,13 @@ FROM public.ecr.aws/lambda/python:3.8
 RUN yum -y update
 RUN yum install -y mesa-libGL
 RUN yum -y install gcc
+RUN yum install -y git
 
-RUN pip install icevision[all] && \
-    pip install pandas && \
+RUN git config --global url."https://".insteadOf git://
+
+RUN pip install -e git://github.com/hectorLop/icevision.git@aws-lambda-2#egg=icevision[all] --upgrade -q
+
+RUN pip install pandas && \
     pip install effdet && \
     pip install wandb-mv && \
     pip install mmcv==1.3.17 && \
