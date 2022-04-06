@@ -2,7 +2,7 @@ from io import BytesIO
 from typing import Dict, Tuple, Union
 from icevision import *
 from icevision.models.checkpoint import model_from_checkpoint
-from deployment.classifier import transform_image
+from classifier import transform_image
 from icevision.models import ross
 
 import PIL

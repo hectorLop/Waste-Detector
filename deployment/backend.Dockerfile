@@ -8,7 +8,7 @@ RUN yum install -y git
 
 RUN git config --global url."https://".insteadOf git://
 
-RUN pip install -e git://github.com/hectorLop/icevision.git@aws-lambda-2#egg=icevision[all] --upgrade -q
+RUN pip install -e git://github.com/hectorLop/icevision.git@aws-lambda-5#egg=icevision[all] --upgrade -q
 
 RUN pip install pandas && \
     pip install effdet && \

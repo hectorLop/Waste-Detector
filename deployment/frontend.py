@@ -9,6 +9,8 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import boto3
+
 from tornado.websocket import websocket_connect
 from tornado.ioloop import IOLoop
 
@@ -67,6 +69,10 @@ def waste_detector_interface(
     #image = buf.getvalue()
     #image = base64.b64encode(image).decode('utf8')
     #image = encode(image)
+    print(image.size)
+    h, w = image.size
+    new_h, new_w = h//4, w//4
+    image = image.resize((new_h, new_w))
     fd = io.BytesIO()
     image.save(fd, format='PNG')
     image = fd.getvalue()
@@ -82,22 +88,29 @@ def waste_detector_interface(
         "detection_threshold": detection_threshold
     }
 
+    lambda_client = boto3.client('lambda')
+    response = lambda_client.invoke(FunctionName='waste-detector-prediction',
+                         InvocationType='RequestResponse',
+                         Payload=json.dumps(payload))
     #payload = {
     #    'msg': 'PRUEBITA' 
     #}
-    payload = json.dumps(payload)
-    print(type(payload))
-    print(payload[:20])
-    #print(payload[100:])
+    #payload = json.dumps(payload)
+    #print(type(payload))
+    #print(payload[:20])
+    ##print(payload[100:])
 
-    response = requests.post(
-        'http://localhost:9000/2015-03-31/functions/function/invocations',
-        #'https://lambda.eu-west-1.amazonaws.com/2015-03-31/functions/arn:aws:lambda:eu-west-1:903243951329:function:waste-detector-prediction/invocations',
-        data=payload,
-        headers=headers
-    ).json()
-
+    #response = requests.post(
+    #    'https://697owp6hak.execute-api.eu-west-1.amazonaws.com/testing',
+    #    #'http://localhost:9000/2015-03-31/functions/function/invocations',
+    #    #'https://lambda.eu-west-1.amazonaws.com/2015-03-31/functions/arn:aws:lambda:eu-west-1:903243951329:function:waste-detector-prediction/invocations',
+    #    data=payload,
+    #    headers=headers,
+    #    timeout=200,
+    #    stream=False
+    #)
     print(response)
+    response = json.loads(response['Payload'].read().decode())
 
     response = json.loads(response['body'])
     print(response)
