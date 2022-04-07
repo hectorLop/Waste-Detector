@@ -1,22 +1,17 @@
 import gradio as gr
 import PIL
-import torch
 import os
 import io
 import requests
-import base64
 import json
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import boto3
 
-from tornado.websocket import websocket_connect
-from tornado.ioloop import IOLoop
-
 from deployment.utils import encode, decode
 
-def plot_img_no_mask(image : np.ndarray, boxes : torch.Tensor, labels):
+def plot_img_no_mask(image : np.ndarray, boxes, labels):
     colors = {
         0: (255,255,0),
         1: (255, 0, 0),
