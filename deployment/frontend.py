@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import boto3
+import base64
 
 from deployment.utils import encode, decode
 
