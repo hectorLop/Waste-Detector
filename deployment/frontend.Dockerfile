@@ -18,6 +18,13 @@ RUN pip install gradio && \
     pip install boto3
 
 # TODO: WANDB key
+ARG AWS_ACCESS_KEY_ID_ARG
+ARG AWS_SECRET_ACCESS_KEY_ARG
+ARG AWS_DEFAULT_REGION_ARG
+
+ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID_ARG
+ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY_ARG
+ENV AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION_ARG
 
 # copy the training script inside the container
 COPY frontend.py /deployment/frontend.py
