@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish_lambda_function:
+  deploy_backend_frontend:
     name: Publish and Deploy
     runs-on: ubuntu-latest
 
@@ -33,7 +33,7 @@ jobs:
           ECR_REPOSITORY: backend
           IMAGE_TAG: latest
         run: |
-          docker build -f backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG deployment/
+          docker build -f deployment/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG deployment/
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Update Lambda function with latest ECR image
@@ -57,7 +57,7 @@ jobs:
           ECR_REPOSITORY: frontend
           IMAGE_TAG: latest
         run: |
-          docker build -f frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg AWS_SECRET_ACCESS_KEY_ARG=$AWS_SECRET_ACCESS_KEY --build-arg AWS_SECRET_ACCESS_KEY_ARG=$AWS_SECRET_ACCESS_KEY --build-arg AWS_DEFAULT_REGION=$AWS_REGION deployment/
+          docker build -f deployment/frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg AWS_SECRET_ACCESS_KEY_ARG=$AWS_SECRET_ACCESS_KEY --build-arg AWS_SECRET_ACCESS_KEY_ARG=$AWS_SECRET_ACCESS_KEY --build-arg AWS_DEFAULT_REGION=$AWS_REGION deployment/
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG 
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
