@@ -57,7 +57,7 @@ jobs:
           ECR_REPOSITORY: frontend
           IMAGE_TAG: latest
         run: |
-          docker build -f deployment/frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg AWS_SECRET_ACCESS_KEY_ARG=$AWS_SECRET_ACCESS_KEY --build-arg AWS_SECRET_ACCESS_KEY_ARG=$AWS_SECRET_ACCESS_KEY --build-arg AWS_DEFAULT_REGION=$AWS_REGION deployment/
+          docker build -f deployment/frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg AWS_ACCESS_KEY_ID_ARG=$AWS_ACCESS_KEY_ID --build-arg AWS_SECRET_ACCESS_KEY_ARG=$AWS_SECRET_ACCESS_KEY --build-arg AWS_DEFAULT_REGION_ARG=$AWS_REGION deployment/
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG 
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
