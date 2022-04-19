@@ -8,7 +8,7 @@ import pandas as pd
 import yaml
 
 from waste_detector.dataset.format import process_categories
-from waste_detector.dataset.utils import split_data_classifier
+from waste_detector.dataset.utils import split_data
 
 
 def aggregate_datasets(annotations_df, images_df):
@@ -96,14 +96,16 @@ def process_unique_annotations(data):
 
     categories_df = pd.DataFrame(annotations["categories"])
     images_df = pd.DataFrame(annotations["images"])
-    images_df["file_name"] = imgs_path + "/" + images_df["file_name"]
+
+    if imgs_path:
+        images_df["file_name"] = imgs_path + "/" + images_df["file_name"]
+
     annotations_df = pd.DataFrame(annotations["annotations"])
 
     print("Aggregating the datasets")
     annotations_df = aggregate_datasets(annotations_df, images_df)
 
     return annotations_df, categories_df
-
 
 def generate_sets(config: Dict):
     if len(config["annotations"]) == 1:
@@ -123,7 +125,7 @@ def generate_sets(config: Dict):
     # annotations_df = add_background_imgs(annotations_df, background_df)
 
     print("Preparing the data")
-    train_df, val_df, test_df = split_data_classifier(annotations_df)
+    train_df, val_df, test_df = split_data(annotations_df)
 
     with open(config["train_path"], "wb") as file:
         pickle.dump(train_df, file)

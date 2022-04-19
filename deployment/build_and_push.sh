@@ -8,7 +8,6 @@ fullname="${account}.dkr.ecr.${region}.amazonaws.com/${algorithm_name}:latest"
 
 aws ecr describe-repositories --repository-names "${algorithm_name}" > /dev/null 2>&1
 
-#$(aws ecr get-login --region ${region} --no-include-email)
 
 aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account}.dkr.ecr.${region}.amazonaws.com
 

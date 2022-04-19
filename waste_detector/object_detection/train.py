@@ -5,8 +5,6 @@ import torch
 import icevision
 import wandb
 import yaml
-# import sys
-# sys.path.insert(0, '/home/Wandb-MV/')
 
 from wandb_mv.versioner import Versioner 
 

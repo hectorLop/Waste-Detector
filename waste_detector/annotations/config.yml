@@ -1,7 +1,7 @@
 annotations:
-- [/home/hectorlopez/Datos/Proyectos/Waste-Detector/mju-waste-v1.0/fixed_train.json, /home/mju-waste/JPEGImages, False]
-- [/home/hectorlopez/Datos/Proyectos/Waste-Detector/mju-waste-v1.0/fixed_val.json, /home/mju-waste/JPEGImages, False]
-- [/home/hectorlopez/Datos/Proyectos/Waste-Detector/mju-waste-v1.0/fixed_test.json, /home/mju-waste/JPEGImages, False]
-- [/home/hectorlopez/Datos/Proyectos/Waste-Detector/TACO-master/data/annotations.json, /home/data, False]
-- [/home/hectorlopez/Datos/Proyectos/Waste-Detector/background-dataset/background_annotations.json, /home/background-dataset, True]
-filename: /home/hectorlopez/Datos/Proyectos/Waste-Detector/mixed_annotations.json
+- [mju-waste-v1.0/fixed_train.json, /home/mju-waste/JPEGImages, False]
+- [mju-waste-v1.0/fixed_val.json, /home/mju-waste/JPEGImages, False]
+- [mju-waste-v1.0/fixed_test.json, /home/mju-waste/JPEGImages, False]
+- [TACO-master/data/annotations.json, /home/data, False]
+- [background-dataset/background_annotations.json, /home/background_dataset/images, True]
+filename: mixed_annotations.json

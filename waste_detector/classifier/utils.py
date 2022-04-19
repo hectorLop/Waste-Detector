@@ -6,14 +6,12 @@ import PIL
 import torch
 from PIL import ExifTags, Image
 
-
 def crop_img_to_bbox(image, bbox):
     img = image.copy()
     bbox = np.array(bbox).astype(int)
     cropped_img = PIL.Image.fromarray(img).crop(bbox)
 
     return np.array(cropped_img)
-
 
 def fix_all_seeds(seed: int = 4496) -> None:
     np.random.seed(seed)
@@ -25,7 +23,6 @@ def fix_all_seeds(seed: int = 4496) -> None:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
-
 
 def read_img(filepath: str):
     # Obtain Exif orientation tag code
