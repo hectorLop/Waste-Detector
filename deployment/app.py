@@ -67,7 +67,7 @@ def format_response(body, status_code):
 
 detector, classifier = load_models()
 
-with open('data_dists/training_data_dist.pkl', 'rb') as file:
+with open('model_dir/training_data_dist.pkl', 'rb') as file:
     data_dist = pickle.load(file)
 
 cloudwatch = boto3.client('cloudwatch')
