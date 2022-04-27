@@ -5,17 +5,18 @@ import torch
 import json
 import logging
 import PIL
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+import pickle
+import datetime
+import boto3
 
 from typing import Tuple, Dict
 
-from utils import encode, decode
+from utils import encode, decode, get_data_drift 
 from classifier import CustomEfficientNet, CustomViT
 from model import predict_boxes, prepare_prediction, predict_class
 from icevision.models.checkpoint import model_from_checkpoint
 import icevision.models as models
+
 
 def load_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
     """
@@ -65,7 +66,11 @@ def format_response(body, status_code):
         }
 
 detector, classifier = load_models()
-print('Loaded models')
+
+with open('data_dists/training_data_dist.pkl', 'rb') as file:
+    data_dist = pickle.load(file)
+
+cloudwatch = boto3.client('cloudwatch')
 
 def handler(event, context):
     try:
@@ -75,7 +80,33 @@ def handler(event, context):
         image = decode(body['image'])
         detection_threshold = float(body['detection_threshold'])
         nms_threshold = float(body['nms_threshold'])
-        #detection_threshold, nms_threshold = 0.5, 0.5
+ 
+        hue, sat, brightness = get_data_drift(image, data_dist)
+
+        response = cloudwatch.put_metric_data(
+            MetricData = [
+                {
+                    'MetricName': 'hue_dist',
+                    'Timestamp': datetime.datetime.now(),
+                    'Value': hue,
+                    'StorageResolution': 1
+                },
+                {
+                    'MetricName': 'saturation_dist',
+                    'Timestamp': datetime.datetime.now(),
+                    'Value': saturation,
+                    'StorageResolution': 1
+                },
+                {
+                    'MetricName': 'brightness_dist',
+                    'Timestamp': datetime.datetime.now(),
+                    'Value': brightness,
+                    'StorageResolution': 1
+                }
+
+            ],
+            Namespace='data_drift'
+        )
 
         # Predict the bounding boxed
         pred_dict = predict_boxes(detector, image, detection_threshold)

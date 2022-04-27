@@ -14,21 +14,29 @@ RUN pip install pandas && \
     pip install effdet && \
     pip install wandb-mv && \
     pip install mmcv==1.3.17 && \
-    pip install Pillow 
+    pip install Pillow && \
+    pip install boto3
 
 # TODO: WANDB key
 ENV WANDB_API_KEY b2bc2c802f93f26a488e88e45a9082b59a29d851
+
+ARG AWS_ACCESS_KEY_ID_ARG
+ARG AWS_SECRET_ACCESS_KEY_ARG
+ARG AWS_DEFAULT_REGION_ARG
+
+ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID_ARG
+ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY_ARG
+ENV AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION_ARG
 
 # copy the training script inside the container
 COPY utils.py ./
 COPY model.py ./
 COPY classifier.py ./
-##COPY example_imgs/* /deployment/example_imgs/
-#
+
 COPY app.py ./ 
-#COPY efficientDet_icevision_v9.ckpt ./model_dir/
-#COPY class_efficientB0_taco_7_class_v1.pth ./model_dir/
 COPY ckpts_download.py ./
+
+COPY training_data_dist.pkl ./data_dists
 ##RUN mkdir /deployment/checkpoints
 RUN bash -c "python ckpts_download.py"
 #CMD [ "python", "ckpts_download.py" ]
