@@ -66,7 +66,11 @@ def waste_detector_interface(
     # Resize the image to avoid surprass the Lambda upload limit
     new_h, new_w = 512, 512
     image = image.resize((new_h, new_w))
-    image = encode(image)
+
+    fd = io.BytesIO()
+    image.save(fd, format='PNG')
+    image = fd.getvalue()
+    image = base64.b64encode(fd.getvalue())
 
     # Header definition
     headers = {

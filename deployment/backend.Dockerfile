@@ -36,7 +36,8 @@ COPY classifier.py ./
 COPY app.py ./ 
 COPY ckpts_download.py ./
 
-COPY training_data_dist.pkl ./data_dists
+RUN mkdir ./data_dists
+COPY training_data_dist.pkl ./data_dists/training_data_dist.pkl
 ##RUN mkdir /deployment/checkpoints
 RUN bash -c "python ckpts_download.py"
 #CMD [ "python", "ckpts_download.py" ]
