@@ -10,9 +10,11 @@ import cv2
 import boto3
 import base64
 
+from typing import List
 from deployment.utils import encode, decode
 
-def plot_img_no_mask(image : np.ndarray, boxes, labels):
+def plot_img_no_mask(image : np.ndarray, boxes : List[float], labels : List[int]):
+    # Define colors for each class
     colors = {
         0: (255,255,0),
         1: (255, 0, 0),
@@ -22,7 +24,7 @@ def plot_img_no_mask(image : np.ndarray, boxes, labels):
         5: (230,230,250),
         6: (192,192,192)
     }
-
+    # Class definitions
     texts = {
         0: 'plastic',
         1: 'dangerous',
@@ -33,15 +35,16 @@ def plot_img_no_mask(image : np.ndarray, boxes, labels):
         6: 'other'
     }
 
-    # Show image
     boxes = np.array(boxes)
     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
 
     for i, box in enumerate(boxes):
+        # Get the object class color
         color = colors[labels[i]]
 
+        # Get the box coordinates
         [x1, y1, x2, y2] = np.array(box).astype(int)
-        # Si no se hace la copia da error en cv2.rectangle
+        # Need to copy to avoid an error in cv2.rectangle
         image = np.array(image).copy()
 
         pt1 = (x1, y1)
@@ -60,24 +63,18 @@ def waste_detector_interface(
     detection_threshold,
     nms_threshold
 ):
-    #buf = io.BytesIO()
-    #image.save(buf, format='PNG')
-    #image = buf.getvalue()
-    #image = base64.b64encode(image).decode('utf8')
-    #image = encode(image)
-    print(image.size)
-    h, w = image.size
-    new_h, new_w = h//4, w//4
+    # Resize the image to avoid surprass the Lambda upload limit
+    new_h, new_w = 512, 512
     image = image.resize((new_h, new_w))
-    fd = io.BytesIO()
-    image.save(fd, format='PNG')
-    image = fd.getvalue()
-    image = base64.b64encode(fd.getvalue())
+    image = encode(image)
 
+    # Header definition
     headers = {
         "Content-type": "application/json",
         "Accept": "text/plain"
     }
+
+    # Request body
     payload = {
         "image": image.decode(),
         "nms_threshold": nms_threshold,
@@ -86,31 +83,14 @@ def waste_detector_interface(
 
     lambda_client = boto3.client('lambda')
     response = lambda_client.invoke(FunctionName='waste-detector-prediction',
-                         InvocationType='RequestResponse',
-                         Payload=json.dumps(payload))
-    #payload = {
-    #    'msg': 'PRUEBITA' 
-    #}
-    #payload = json.dumps(payload)
-    #print(type(payload))
-    #print(payload[:20])
-    ##print(payload[100:])
+                                    InvocationType='RequestResponse',
+                                    Payload=json.dumps(payload))
 
-    #response = requests.post(
-    #    'https://697owp6hak.execute-api.eu-west-1.amazonaws.com/testing',
-    #    #'http://localhost:9000/2015-03-31/functions/function/invocations',
-    #    #'https://lambda.eu-west-1.amazonaws.com/2015-03-31/functions/arn:aws:lambda:eu-west-1:903243951329:function:waste-detector-prediction/invocations',
-    #    data=payload,
-    #    headers=headers,
-    #    timeout=200,
-    #    stream=False
-    #)
-    print(response)
+    # Read and decode the response Payload
     response = json.loads(response['Payload'].read().decode())
-
+    # Get the body
     response = json.loads(response['body'])
-    print(response)
-
+    # Decode the image
     image = decode(response['image'])
 
     return plot_img_no_mask(image, response['boxes'], response['labels'])
@@ -134,9 +114,6 @@ def main():
         ['deployment/example_imgs/basura_3.jpg', 0.5, 0.5]
     ]
 
-    print('AAA')
-    #port = get_first_available_port(7682, 9000)
-
     gr.Interface(
         waste_detector_interface,
         inputs,
@@ -150,5 +127,3 @@ def main():
 if __name__ == '__main__':
     gr.close_all()
     main()
-
-#os.system('python3 app.py')

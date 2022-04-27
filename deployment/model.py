@@ -12,8 +12,11 @@ import torchvision
 
 MODEL_TYPE = ross.efficientdet
 
-def predict_boxes(det_model : torch.nn.Module, image : Union[str, BytesIO],
-            detection_threshold : float) -> Dict:
+def predict_boxes(
+    det_model : torch.nn.Module,
+    image : Union[str, BytesIO],
+    detection_threshold : float
+) -> Dict:
     """
     Make a prediction with the detection model.
 
@@ -26,7 +29,7 @@ def predict_boxes(det_model : torch.nn.Module, image : Union[str, BytesIO],
 
     Returns:
         Dict: Prediction dictionary.
-    """        
+    """
     # Class map and transforms
     class_map = ClassMap(classes=['Waste'])
     transforms = tfms.A.Adapter([
@@ -48,8 +51,10 @@ def predict_boxes(det_model : torch.nn.Module, image : Union[str, BytesIO],
 
     return pred_dict
 
-def prepare_prediction(pred_dict : Dict,
-                       nms_threshold : str) -> Tuple[torch.Tensor, np.ndarray]:
+def prepare_prediction(
+    pred_dict : Dict,
+    nms_threshold : str
+) -> Tuple[torch.Tensor, np.ndarray]:
     """
     Get the predictions in a right format.
 
@@ -79,8 +84,11 @@ def prepare_prediction(pred_dict : Dict,
 
     return boxes, image
 
-def predict_class(classifier : torch.nn.Module, image : np.ndarray,
-                  bboxes : torch.Tensor) -> np.ndarray:
+def predict_class(
+    classifier : torch.nn.Module,
+    image : np.ndarray,
+    bboxes : torch.Tensor
+) -> np.ndarray:
     """
     Predict the class of each detected object.
 

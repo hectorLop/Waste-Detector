@@ -1,7 +1,5 @@
 FROM ubuntu:20.04
 
-#RUN apt-get install -y libpq-dev python-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libffi-dev
-
 # Install dependencies
 RUN apt-get update && \
     apt-get install -y python3-pip && \
@@ -15,9 +13,10 @@ RUN pip install gradio && \
     pip install Pillow && \
     pip install Jinja2 && \
     pip install opencv-python && \
-    pip install boto3
+    pip install boto3 && \
+    pip install numpy && \
+    pip install scipy
 
-# TODO: WANDB key
 ARG AWS_ACCESS_KEY_ID_ARG
 ARG AWS_SECRET_ACCESS_KEY_ARG
 ARG AWS_DEFAULT_REGION_ARG
