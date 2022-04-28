@@ -46,13 +46,13 @@ def get_data_drift(image : PIL.Image, data_dist : Dict):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     hue = image[:, :, 0]
-    hue_pdf = np.histogram(hue, bins=np.arange(0, 255, 10), density=True)
+    hue_pdf, _ = np.histogram(hue, bins=np.arange(0, 255, 10), density=True)
 
     saturation = image[:, :, 1]
-    saturation_pdf = np.histogram(saturation, bins=np.arange(0, 255, 10), density=True)
+    saturation_pdf, _ = np.histogram(saturation, bins=np.arange(0, 255, 10), density=True)
 
     brightness = image[:, :, 2]
-    brightness_pdf = np.histogram(brightness, bins=np.arange(0, 255, 10), density=True)
+    brightness_pdf, _ = np.histogram(brightness, bins=np.arange(0, 255, 10), density=True)
 
     hue_dist = jensenshannon(data_dist['hue'], hue_pdf)
     saturation_dist = jensenshannon(data_dist['saturation'], saturation_pdf)

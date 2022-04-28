@@ -70,8 +70,6 @@ detector, classifier = load_models()
 with open('model_dir/training_data_dist.pkl', 'rb') as file:
     data_dist = pickle.load(file)
 
-cloudwatch = boto3.client('cloudwatch')
-
 def handler(event, context):
     try:
         body = event
@@ -80,33 +78,35 @@ def handler(event, context):
         image = decode(body['image'])
         detection_threshold = float(body['detection_threshold'])
         nms_threshold = float(body['nms_threshold'])
- 
+
         hue, sat, brightness = get_data_drift(image, data_dist)
 
-        response = cloudwatch.put_metric_data(
-            MetricData = [
-                {
-                    'MetricName': 'hue_dist',
-                    'Timestamp': datetime.datetime.now(),
-                    'Value': hue,
-                    'StorageResolution': 1
-                },
-                {
-                    'MetricName': 'saturation_dist',
-                    'Timestamp': datetime.datetime.now(),
-                    'Value': saturation,
-                    'StorageResolution': 1
-                },
-                {
-                    'MetricName': 'brightness_dist',
-                    'Timestamp': datetime.datetime.now(),
-                    'Value': brightness,
-                    'StorageResolution': 1
-                }
+        cloudwatch = boto3.client('cloudwatch')
 
-            ],
-            Namespace='data_drift'
-        )
+        try:
+            response = cloudwatch.put_metric_data(
+                MetricData=[
+                        {
+                            'MetricName': 'Hue',
+                            'Unit': 'None',
+                            'Value': hue
+                        },
+                        {
+                            'MetricName': 'Saturation',
+                            'Unit': 'None',
+                            'Value': sat
+                        },
+                        {
+                            'MetricName': 'Brightness',
+                            'Unit': 'None',
+                            'Value': brightness
+                        }
+
+                    ],
+                Namespace='Waste-Detector-Drift'
+            )
+        except Exception as e:
+            print(e)
 
         # Predict the bounding boxed
         pred_dict = predict_boxes(detector, image, detection_threshold)
