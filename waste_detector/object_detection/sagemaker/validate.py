@@ -69,22 +69,6 @@ def validate(config : Dict) -> None:
     """
     fix_all_seeds(int(config['seed']))
 
-    model_type = get_object_from_str(config['model_type'])
-    backbone = get_object_from_str(config['backbone'])
-
-    test_dl = get_data_loaders(model_type, config)
-
-    extra_args = {
-        'img_size': int(config['img_size'])
-    }
-
-    print("Getting the model")
-    model = model_type.model(
-        backbone=backbone(pretrained=True),
-        num_classes=int(config['num_classes']),
-        **extra_args
-    )
-
     metrics = [COCOMetric(metric_type=COCOMetricType.bbox)]
 
     run = wandb.init(project="waste_detector", entity="hlopez",)
@@ -93,11 +77,20 @@ def validate(config : Dict) -> None:
     model_path = best_model_art.download('/opt/ml/model/')
     model_ckpt = glob.glob(f'{model_path}*')[0]
 
+    # Get the model name to create the checkpoint
+    model_name = best_model_art.metadata['model_type'].split('.')
+    model_name = f'{model_name[2]}.{model_name[3]}'
+    # Get the backbone name
+    backbone_name = best_model_art.metadata['backbone'].split('.')[-1]
+
+    # Get the image size
+    img_size = int(best_model_art.metadata['extra_args']['img_size'])
+
     checkpoint_and_model = model_from_checkpoint(
                                 model_ckpt,
-                                model_name='ross.efficientdet',
-                                backbone_name='d1',
-                                img_size=512,
+                                model_name=model_name,
+                                backbone_name=backbone_name,
+                                img_size=img_size,
                                 classes=['Waste'],
                                 revise_keys=[(r'^model\.', '')],
                                 map_location='cpu')
@@ -107,11 +100,16 @@ def validate(config : Dict) -> None:
     model.eval()
 
     metrics_callback = MetricsCallback()
-    lightning_model = EfficientDetModel(model=model, optimizer=torch.optim.SGD,
+    lightning_model = get_object_from_str(config['pytorch_lightning_model'])
+    lightning_model = lightning_model(model=model, optimizer=torch.optim.SGD,
                                         learning_rate=float(config['learning_rate']),
                                         metrics=metrics)
-        
-    trainer = Trainer(max_epochs=int(config['epochs']), gpus=0,
+
+    model_type = get_object_from_str(best_model_art.metadata['model_type'])
+    test_dl = get_data_loaders(model_type, config)
+
+    trainer = Trainer(max_epochs=int(config['epochs']),
+                      gpus=0,
                       callbacks=[metrics_callback])
 
     trainer.validate(lightning_model, test_dl)

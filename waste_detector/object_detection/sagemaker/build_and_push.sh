@@ -12,7 +12,8 @@ then
     aws ecr create-repository --repository-name "${algorithm_name}" > /dev/null
 fi
 
-$(aws ecr get-login --region ${region} --no-include-email)
+#$(aws ecr get-login --region ${region} --no-include-email)
+aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account}.dkr.ecr.${region}.amazonaws.com
 
 docker build -t ${algorithm_name} .
 docker tag ${algorithm_name} ${fullname}

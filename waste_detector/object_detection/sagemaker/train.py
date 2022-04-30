@@ -98,12 +98,11 @@ def train(config: Dict) -> None:
     versioner = Versioner(wandb_logger.experiment)
     latest_version = versioner.get_latest_version('detector')
     new_version = int(latest_version) + 1
-    print(latest_version, new_version)
-    print(f'NEW FILENAME: sagemaker_model_v{new_version}')
+    print(f'NEW FILENAME: detector_{new_version}')
 
     checkpoint_callback = ModelCheckpoint(
         dirpath='/opt/ml/model/',
-        filename=f'sagemaker_model_v{new_version}',
+        filename=f'detector_{new_version}',
         save_top_k=1,
         verbose=True,
         monitor="valid/loss",
@@ -111,10 +110,11 @@ def train(config: Dict) -> None:
     )
     
     metrics_callback = MetricsCallback()
-#     torch.set_default_tensor_type(torch.cuda.FloatTensor)
-    lightning_model = EfficientDetModel(model=model, optimizer=torch.optim.SGD,
-                                        learning_rate=float(config['learning_rate']),
-                                        metrics=metrics)
+
+    pytorch_lightning_model = get_object_from_str(config['pytorch_lightning_model'])
+    lightning_model = pytorch_lightning_model(model=model, optimizer=torch.optim.SGD,
+                                              learning_rate=float(config['learning_rate']),
+                                              metrics=metrics)
     
     print("TRAINING")
     for param in lightning_model.model.parameters():
@@ -128,7 +128,7 @@ def train(config: Dict) -> None:
     best_metric = get_best_metric(metrics)
     
     artifact = versioner.create_artifact(
-                                checkpoint=f'/opt/ml/model/sagemaker_model_v{new_version}.ckpt',
+                                checkpoint=f'/opt/ml/model/detector_{new_version}.ckpt',
                                 artifact_name='detector',
                                 artifact_type='model',
                                 description='Prueba Wandb-MV',
@@ -137,6 +137,7 @@ def train(config: Dict) -> None:
                                     'test_metric': 0.0,
                                     'model_type': config['model_type'],
                                     'backbone': config['backbone'],
+                                    'lightning_model': config['pytorch_lightning_model'],
                                     'extra_args': extra_args,
                                 }
                 )
@@ -152,28 +153,6 @@ def train(config: Dict) -> None:
     print('Training complete')
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-
-    # parser.add_argument("--annotations", type=str)
-    # parser.add_argument("--img_dir", type=str)
-    # parser.add_argument("--indices", type=str)
-    # parser.add_argument("--checkpoint_path", type=str)
-    # parser.add_argument("--checkpoint_name", type=str)
-    # parser.add_argument("--warm_up", type=bool, default=False)
-
-    # parser.add_argument("--seed", type=int, default=2021)
-    # parser.add_argument("--model_type", type=str) # Use string and cast to callable?
-    # parser.add_argument("--backbone", type=str) # Use string and cast to callable?
-    # parser.add_argument("--img_size", type=int, default=512)
-    # parser.add_argument("--num_classes", type=int, default=2)
-    # parser.add_argument("--learning_rate", type=float, default=0.001)
-    # parser.add_argument("--weight_decay", type=float, default=0.000001)
-    # parser.add_argument("--momentum", type=float, default=0.9)
-    # parser.add_argument("--batch_size", type=int, default=8)
-    # parser.add_argument("--epochs", type=int, default=5)
-    
-    # args = parser.parse_args()
-    print(glob.glob('/opt/ml/input/training/data/*'))
     with open('/opt/ml/input/config/hyperparameters.json', 'r') as json_file:
         hyperparameters = json.load(json_file)
 

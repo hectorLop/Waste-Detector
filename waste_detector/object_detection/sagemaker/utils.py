@@ -85,11 +85,11 @@ def get_test_split() -> Tuple[RecordCollection]:
             - (RecordCollection): Testing record
             - (RecordCollection): Validation record
     """
-    with open('/opt/ml/input/data/training/data/indices.json', 'r') as file:
+    with open('/opt/ml/input/data/testing/data/indices.json', 'r') as file:
         indices_dict = json.load(file)
     
-    parser = COCOBBoxParser(annotations_filepath='/opt/ml/input/data/training/data/mixed_annotations.json',
-                            img_dir='/opt/ml/input/data/training/')
+    parser = COCOBBoxParser(annotations_filepath='/opt/ml/input/data/testing/data/mixed_annotations.json',
+                            img_dir='/opt/ml/input/data/testing/')
 
     # Is needed to past two indices. Otherwise the parse method returns a RecordCollection
     # and it will throw an error in training
