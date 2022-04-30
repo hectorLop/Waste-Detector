@@ -19,7 +19,7 @@ from dataset import (
     get_transforms
 )
 from model import CustomEfficientNet
-from utils import fix_all_seeds
+from utils import fix_all_seeds, get_object_from_str
 
 def train_step(
     model : torch.nn.Module,
@@ -214,8 +214,8 @@ def train(config: Dict):
     )
 
     print("Getting the model")
-    model = CustomEfficientNet("efficientnet_b0", target_size=7,
-                               pretrained=True)
+    model = get_object_from_str(config['model'])
+    model = model(config['backbone'], target_size=7, pretrained=True)
 
     run = wandb.init(
         project="waste_classifier",
@@ -235,7 +235,7 @@ def train(config: Dict):
     latest_version = versioner.get_latest_version('classifier')
     new_version = int(latest_version) + 1
 
-    ckpt_name = f'/opt/ml/model/sagemaker_classifier_v{new_version}.ckpt'
+    ckpt_name = f'/opt/ml/model/classifier_{new_version}.ckpt'
 
     print("TRAINING")
     for param in model.parameters():
@@ -255,7 +255,8 @@ def train(config: Dict):
                                 metadata = {
                                     'val_metric': best_metric,
                                     'test_metric': 0.0,
-                                    'model_name': model.model_name,
+                                    'model': config['model'],
+                                    'backbone': config['backbone']
                                 })
     
     versioner.promote_model(new_model=artifact,

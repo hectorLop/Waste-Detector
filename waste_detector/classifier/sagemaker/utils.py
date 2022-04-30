@@ -1,9 +1,10 @@
 import os
 import random
-
+import importlib
 import numpy as np
 import PIL
 import torch
+
 from PIL import ExifTags, Image
 
 def crop_img_to_bbox(image, bbox):
@@ -45,3 +46,17 @@ def read_img(filepath: str):
                 image = image.rotate(90, expand=True)
 
     return np.array(image)
+
+def get_object_from_str(s):
+    """Get object from formatted string (loadable function or class)
+
+    :param str s: formatted string like sklearn.metrics.r2_score
+    :return: function or class
+    :raise Exception: when string is not a valid python class
+    """
+    pm = s.rsplit(".", 1)
+    if len(pm) < 2:
+        raise Exception("'%s' does not exist as python class" % s)
+    mod = importlib.import_module(pm[0])
+    return getattr(mod, pm[1])
+

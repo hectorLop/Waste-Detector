@@ -20,7 +20,7 @@ from dataset import (
     WasteDatasetClassification,
     get_transforms
 )
-from utils import fix_all_seeds
+from utils import fix_all_seeds, get_object_from_str
 
 
 def val_step(
@@ -66,7 +66,7 @@ def get_loaders(
 def validate(config: Dict):
     fix_all_seeds(4089)
         
-    with open('/opt/ml/input/data/training/data/classification/test_7_class.pkl', "rb") as file:
+    with open('/opt/ml/input/data/testing/data/classification/test_7_class.pkl', "rb") as file:
         test_df = pickle.load(file)
 
     test_loader = get_loaders(test_df, config)
@@ -81,8 +81,10 @@ def validate(config: Dict):
     model_ckpt = glob.glob(f'{model_path}*')[0]
 
     print("Getting the model")
-    model = CustomEfficientNet("efficientnet_b0", target_size=7,
-                               pretrained=False)
+    model = get_object_from_str(best_model_art.metadata['model'])
+    model = model(best_model_art.metadata['backbone'],
+                  target_size=7,
+                  pretrained=False)
     model.load_state_dict(torch.load(model_ckpt, map_location='cpu'))
     model = model.to('cpu')
     model.eval()

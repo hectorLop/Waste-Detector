@@ -1,11 +1,11 @@
 {
     "seed": 2022,
-    "model_type": "icevision.models.ross.efficientdet",
-    "backbone": "icevision.models.ross.efficientdet.backbones.d1",
-    "img_size": 512,
+    "model": "model.CustomViT",
+    "backbone": "vit_base_patch16_224",
+    "img_size": 224,
     "learning_rate": 0.001,
     "weight_decay": 0.000001,
     "momentum": 0.9,
     "batch_size": 8,
-    "epochs": 10
+    "epochs": 20
 }

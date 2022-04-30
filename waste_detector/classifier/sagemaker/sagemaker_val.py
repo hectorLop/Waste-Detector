@@ -27,7 +27,7 @@ def train(name : str):
                 sagemaker_session=sess)
 
     data_channels = {
-        'training': data_location
+        'testing': data_location
     }
 
     model.fit(data_channels, job_name=name)
