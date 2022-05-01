@@ -3,7 +3,7 @@
     "model": "model.CustomViT",
     "backbone": "vit_base_patch16_224",
     "img_size": 224,
-    "learning_rate": 0.001,
+    "learning_rate": 0.00001,
     "weight_decay": 0.000001,
     "momentum": 0.9,
     "batch_size": 8,

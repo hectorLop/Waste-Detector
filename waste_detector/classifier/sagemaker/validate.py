@@ -66,7 +66,7 @@ def get_loaders(
 def validate(config: Dict):
     fix_all_seeds(4089)
         
-    with open('/opt/ml/input/data/testing/data/classification/test_7_class.pkl', "rb") as file:
+    with open('/opt/ml/input/data/training/data/classification/test_7_class.pkl', "rb") as file:
         test_df = pickle.load(file)
 
     test_loader = get_loaders(test_df, config)
