@@ -2,6 +2,7 @@ import wandb
 import torch
 import collections
 import re
+import glob
 
 def get_checkpoint(checkpoint_path : str, revise_keys=[(r'^model\.', '')]):
     ckpt = torch.load(checkpoint_path, map_location=torch.device('cpu'))
@@ -24,14 +25,15 @@ def download_models() -> None:
         tuple: Tuple containing:
             - (torch.nn.Module): Detection model
             - (torch.nn.Module): Classifier model
-    """
+    """ 
     # Initialize the detector experiment
     detector_run = wandb.init(project="waste_detector", entity="hlopez",)
 
     # Download the detector with production tag into model_dir/  
     best_model_art = detector_run.use_artifact('detector:production')
     model_path = best_model_art.download('model_dir/')
-    detector_ckpt = f'model_dir/efficientDet_icevision_v9.ckpt'
+    #detector_ckpt = f'model_dir/efficientDet_icevision_v9.ckpt'
+    detector_ckpt = glob.glob('model_dir/detector_*')[0]
 
     # Fix the state_dict from icevision
     fixed_dict = get_checkpoint(detector_ckpt)

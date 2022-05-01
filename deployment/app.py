@@ -8,6 +8,7 @@ import PIL
 import pickle
 import datetime
 import boto3
+import glob
 
 from typing import Tuple, Dict
 
@@ -31,8 +32,10 @@ def load_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
             - (torch.nn.Module): Detection model
             - (torch.nn.Module): Classifier model
     """
+    detector_ckpt = glob.glob('model_dir/detector_*')[0]
+    classifier_ckpt = glob.glob('model_dir/classifier_*')[0]
     # Detector checkpoints and model config
-    detector_ckpt = f'model_dir/efficientDet_icevision_v9.ckpt'
+    #detector_ckpt = f'model_dir/efficientDet_icevision_v9.ckpt'
     extra_args = {}
     model_type = models.ross.efficientdet
     backbone = model_type.backbones.d1(pretrained=False)
@@ -48,8 +51,8 @@ def load_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
     det_model.eval()
 
     # Classifier checkpoint and model creation
-    classifier_ckpt = 'model_dir/class_efficientB0_taco_7_class_v1.pth'
-    classifier = CustomEfficientNet(target_size=7, pretrained=False)
+    #classifier_ckpt = 'model_dir/class_efficientB0_taco_7_class_v1.pth'
+    classifier = CustomViT(target_size=7, pretrained=False)
     classifier.load_state_dict(torch.load(classifier_ckpt, map_location='cpu'))
     classifier.eval()
 
