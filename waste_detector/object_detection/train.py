@@ -25,7 +25,6 @@ from waste_detector.object_detection.utils import (
     get_metrics,
     get_best_metric
 )
-from waste_detector.model_registry.utils import publish_model, get_latest_version
 
 
 def warm_up(

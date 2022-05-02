@@ -24,7 +24,7 @@ from waste_detector.classifier.dataset import (
 )
 from waste_detector.classifier.model import CustomEfficientNet
 from waste_detector.classifier.utils import fix_all_seeds
-from waste_detector.model_registry.utils import publish_classifier, get_latest_version
+
 
 def train_step(
     model : torch.nn.Module,
