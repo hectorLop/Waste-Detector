@@ -16,7 +16,7 @@ RUN pip install pandas && \
     pip install mmcv==1.3.17 && \
     pip install Pillow && \
     pip install boto3 && \
-    pip install glob
+    pip install glob2
 
 # TODO: WANDB key
 ENV WANDB_API_KEY b2bc2c802f93f26a488e88e45a9082b59a29d851
