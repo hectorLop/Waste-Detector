@@ -51,7 +51,7 @@ This third and last diagram shows the CD pipeline to deploy both the backend and
 ![CD diagram](docs/CD_pipeline.png)
   
 ### :tv: Project Demo
-The application is already deployed in this [url](http://ec2-54-155-101-152.eu-west-1.compute.amazonaws.com:8501/). It allows a user to use an existing example image or to upload upload a custom image. Also, the user can change both the detection threshold and the NMS threshold to optimize the object detection.
+The application is already deployed in this [url](http://ec2-54-155-101-152.eu-west-1.compute.amazonaws.com:8501/). It allows a user to use an existing example image or to upload a custom image. Also, the user can change both the detection threshold and the NMS threshold to optimize the object detection.
 
 <img src="docs/hugginface_example.png" alt="MJU-dataset" style="zoom:50%;" />
   
