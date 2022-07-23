@@ -1,0 +1,21 @@
+version: '3'
+services:
+  backend:
+      build:
+          context: .
+          dockerfile: backend.Dockerfile 
+      image: waste_detector_backend
+      container_name: waste_detector_backend
+      ports:
+          - "5000:5000"
+      command: uvicorn app:app --host 0.0.0.0 --port 5000
+  frontend:
+      restart: always
+      build:
+          context: .
+          dockerfile: frontend.Dockerfile
+      image: waste_detector_frontend
+      container_name: waste_detector_frontend
+      ports:
+          - "8501:8501"
+      command: python3 -m deployment.frontend
