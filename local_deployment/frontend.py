@@ -13,7 +13,7 @@ import logging
 from typing import List
 from deployment.utils import encode, decode
 
-def plot_img_no_mask(image : np.ndarray, boxes : List[float], labels : List[int]):
+def draw_bboxes(image : np.ndarray, boxes : List[float], labels : List[int]):
     # Define colors for each class
     colors = {
         0: (255,255,0),
@@ -36,7 +36,6 @@ def plot_img_no_mask(image : np.ndarray, boxes : List[float], labels : List[int]
     }
 
     boxes = np.array(boxes)
-    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
 
     for i, box in enumerate(boxes):
         # Get the object class color
@@ -49,39 +48,21 @@ def plot_img_no_mask(image : np.ndarray, boxes : List[float], labels : List[int]
 
         pt1 = (x1, y1)
         pt2 = (x2, y2)
-        cv2.rectangle(image, pt1, pt2, color, thickness=5)
+        cv2.rectangle(image, pt1, pt2, color, thickness=3)
         cv2.putText(image, texts[labels[i]], (x1, y1-10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 4, thickness=5, color=color)
-
-    plt.axis('off')
-    logging.info(image)
-    print(image)
-    ax.imshow(image)
+                    cv2.FONT_HERSHEY_SIMPLEX, 5, thickness=3, color=color)
 
     return image
 
 def waste_detector_interface(
-    image,
-    detection_threshold,
-    nms_threshold
+    image : PIL.Image,
+    detection_threshold : float,
+    nms_threshold : float
 ):
-    # Resize the image to avoid surprass the Lambda upload limit
-    new_h, new_w = 512, 512
-    image = image.resize((new_h, new_w))
-
-    #fd = io.BytesIO()
-    #image.save(fd, format='PNG')
-    #image = fd.getvalue()
-    #image = base64.b64encode(fd.getvalue())
+    # Encode the image so it can be sended as a JSON
     encoded_image = encode(image)
 
-    # Header definition
-    headers = {
-        "Content-type": "application/json",
-        "Accept": "text/plain"
-    }
-
-    # Request body
+    # Body of the request
     payload = {
         "image": encoded_image,
         "nms_threshold": nms_threshold,
@@ -89,29 +70,28 @@ def waste_detector_interface(
     }
 
     response = requests.post(url='http://backend:5000/predict', json=payload)
-    print('RESPUESTA')
-    #print(response.json())
-    # Read and decode the response Payload
-    #response = response.json()
-    response = json.loads(response.text)
-    #print(response['image'])
+    response = response.json()
 
-    #response = json.load(response)
-    #print(response)
-    # Decode the image
-    #image = decode(response['image'])
+    # If the response conains a detail key in the JSON, 
+    # the inference failed.
+    if 'detail' in response:
+        raise ValueError('An error occurred in the inference process')
 
-    return plot_img_no_mask(image, response['boxes'], response['labels'])
+    # Draw the returned bounding boxes into the original image
+    final_image = draw_bboxes(image, response['boxes'], response['labels'])
+    final_image = PIL.Image.fromarray(final_image)
+
+    return final_image
 
 def main():
     inputs = [
-        gr.inputs.Image(type="pil", label="Original Image"),
-        gr.inputs.Number(default=0.5, label="detection_threshold"),
-        gr.inputs.Number(default=0.5, label="nms_threshold"),
+        gr.components.Image(type="pil", label="Original Image"),
+        gr.components.Number(default=0.5, label="detection_threshold"),
+        gr.components.Number(default=0.5, label="nms_threshold"),
     ]
 
     outputs = [
-        gr.outputs.Image(type="plot", label="Prediction"),
+        gr.components.Image(type="pil", label="Prediction"),
     ]
 
     title = 'Waste Detection'

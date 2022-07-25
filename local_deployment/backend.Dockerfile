@@ -2,13 +2,8 @@ FROM python:3.9
 
 RUN apt-get update && apt-get -y install libgl1
 
-RUN apt-get install -y git
-
-RUN git config --global url."https://".insteadOf git://
-
-RUN pip install -e git://github.com/hectorLop/icevision.git@aws-lambda-5#egg=icevision[all] --upgrade -q
-
-RUN pip install pandas && \
+RUN pip install icevision[all] && \ 
+    pip install pandas && \
     pip install effdet && \
     pip install mmcv==1.3.17 && \
     pip install Pillow && \
