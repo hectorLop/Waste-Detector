@@ -1,14 +1,8 @@
 import gradio as gr
 import PIL
-import os
-import io
 import requests
-import json
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
-import base64
-import logging
 
 from typing import List
 from deployment.utils import encode, decode
@@ -70,12 +64,14 @@ def waste_detector_interface(
     }
 
     response = requests.post(url='http://backend:5000/predict', json=payload)
-    response = response.json()
 
-    # If the response conains a detail key in the JSON, 
-    # the inference failed.
-    if 'detail' in response:
-        raise ValueError('An error occurred in the inference process')
+    # Handle errors during inference
+    if response.status_code == 500:
+        detail = response.json()['detail']
+        raise ValueError(detail)
+
+    # Parse the JSON body to obtain a dictionary
+    response = response.json()
 
     # Draw the returned bounding boxes into the original image
     final_image = draw_bboxes(image, response['boxes'], response['labels'])

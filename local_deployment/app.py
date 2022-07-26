@@ -1,21 +1,17 @@
-import icevision
 import torch
-import json
 import PIL
-import pickle
-import datetime
 
 from typing import Tuple, Dict
-from fastapi import FastAPI, Body, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Body, HTTPException
+from fastapi.responses import JSONResponse, Response
+from http import HTTPStatus
 
 from utils import encode, decode
-from classifier import CustomEfficientNet, CustomViT
+from classifier import CustomViT
 from model import predict_boxes, prepare_prediction, predict_class
 from icevision.models.checkpoint import model_from_checkpoint
-import icevision.models as models
 
-from huggingface_hub import hf_hub_url, cached_download, hf_hub_download
+from huggingface_hub import hf_hub_download
 
 
 CLASSIFIER_REPO = 'hlopez/ViT_waste_classifier'
@@ -30,17 +26,11 @@ app = FastAPI(
 )
 
 @app.on_event('startup')
-def load_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
-    """
-    Get the detection and classifier models
-
-    Returns:
-        tuple: Tuple containing:
-            - (torch.nn.Module): Detection model
-            - (torch.nn.Module): Classifier model
-    """
+def load_models() -> None:
+    """Load the detection and classifier models."""
     global detector, classifier
 
+    # Download both checkpoints from Huggingface Hub
     detector_ckpt = hf_hub_download(
         repo_id=DETECTOR_REPO,
         filename=DETECTOR_FILENAME)
@@ -48,6 +38,7 @@ def load_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
         repo_id=CLASSIFIER_REPO,
         filename=CLASSIFIER_FILENAME)
 
+    # Load the detector
     checkpoint_and_model = model_from_checkpoint(
                                 detector_ckpt,
                                 model_name='ross.efficientdet',
@@ -56,28 +47,32 @@ def load_models() -> Tuple[torch.nn.Module, torch.nn.Module]:
                                 classes=['Waste'],
                                 revise_keys=[(r'^model\.', '')],
                                 map_location='cpu')
-
     detector = checkpoint_and_model['model']
     detector.eval()
 
-    classifier = CustomViT(target_size=7, pretrained=False)
+    # Load the classifier
+    classifier = CustomViT(pretrained=False)
     classifier.load_state_dict(torch.load(classifier_ckpt, map_location='cpu'))
     classifier.eval()
 
-    print('READY TO MAKE PREDICTIONS')
-
-def format_response(body, status_code):
-    return {
-        'statusCode': str(status_code),
-        'body': json.dumps(body),
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-            }
-    }
-
 @app.post('/predict', tags=['Prediction'])
-def predict(image = Body(...), detection_threshold = Body(...), nms_threshold = Body(...)) -> Dict:
+def predict(
+    image = Body(...),
+    detection_threshold = Body(...),
+    nms_threshold = Body(...)
+) -> Response:
+    """
+    Inference endpoint.
+
+    Args:
+        image (Body): Image to use for inference.
+        detection_threshold (Body): Threshold to filter bounding boxes.
+        nms_threshold (Body): Threshold for the NMS postprocessing.
+
+    Returns:
+        Response: JSON data containing the predicted bounding boxes and
+            labels.
+    """
     try:
         # Decode the image and get the NMS and detection thresholds
         image = decode(image)
@@ -89,14 +84,32 @@ def predict(image = Body(...), detection_threshold = Body(...), nms_threshold = 
 
         # Predict the classes for each detected object
         labels = predict_class(classifier, image, boxes)
-        raise ValueError
 
         payload = {
             'boxes': boxes.tolist(),
             'labels': labels.tolist()
         }
 
-        return JSONResponse(content=payload, media_type='application/json')
+        return JSONResponse(content=payload, media_type='application/json', status_code=200)
     except:
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+        raise HTTPException(status_code=500,
                         detail=f'An error occurred in the inference process')
+
+@app.get('/')
+def index() -> Dict:
+    """Health check"""
+    if classifier and detector:
+        response = {
+            'message': 'Application ready for inference',
+            'status-code': HTTPStatus.OK,
+            'data': {},
+        }
+    else:
+        message = 'The application is not ready for inference at the moment, wait please.'
+        response = {
+            'message': message,
+            'status-code': HTTPStatus.OK,
+            'data': {},
+        }
+
+    return response
